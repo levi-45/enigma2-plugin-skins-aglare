@@ -97,7 +97,7 @@ config.plugins.Aglare.VolumeBar = ConfigSelection(default='volume1', choices=[
  ('volume2', _('volume2'))])
 
 def Plugins(**kwargs):
-    return PluginDescriptor(name='Setup Aglare', description=_('Customization tool for Aglare-FHD Skin'), where=PluginDescriptor.WHERE_PLUGINMENU, icon='plugin.png', fnc=main)
+    return PluginDescriptor(name='Setup Aglare', description=_('Customization tool for Aglare-FHD-PLI Skin'), where=PluginDescriptor.WHERE_PLUGINMENU, icon='plugin.png', fnc=main)
 
 
 def main(session, **kwargs):
@@ -105,13 +105,13 @@ def main(session, **kwargs):
 
 
 class AglareSetup(ConfigListScreen, Screen):
-    skin = '<screen name="AglareSetup" position="center,center" size="1000,640" title="Aglare-FHD Skin Controler">\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00ff4A3C" halign="center" position="20,598" size="120,26" text="Cancel" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#0056C856" halign="center" position="220,598" size="120,26" text="Save" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00fbff3c" halign="center" position="420,598" size="120,26" text="Update" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00403cff" halign="center" position="620,598" size="120,26" text="Preview" />\n\t\t  <widget name="Preview" position="997,690" size="498, 280" zPosition="1" />\n\t\t <widget name="config" font="Regular; 24" itemHeight="40" position="5,5" scrollbarMode="showOnDemand" size="990,550" />\n\t\t\n\t\t  </screen>'
+    skin = '<screen name="AglareSetup" position="center,center" size="1000,640" title="Aglare-FHD-PLI Skin Controler">\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00ff4A3C" halign="center" position="20,598" size="120,26" text="Cancel" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#0056C856" halign="center" position="220,598" size="120,26" text="Save" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00fbff3c" halign="center" position="420,598" size="120,26" text="Update" />\n\t\t  <eLabel font="Regular; 24" foregroundColor="#00403cff" halign="center" position="620,598" size="120,26" text="Preview" />\n\t\t  <widget name="Preview" position="997,690" size="498, 280" zPosition="1" />\n\t\t <widget name="config" font="Regular; 24" itemHeight="40" position="5,5" scrollbarMode="showOnDemand" size="990,550" />\n\t\t\n\t\t  </screen>'
 
     def __init__(self, session):
-        self.version = '.Aglare-FHD'
+        self.version = '.Aglare-FHD-PLI'
         Screen.__init__(self, session)
         self.session = session
-        self.skinFile = '/usr/share/enigma2/Aglare-FHD/skin.xml'
+        self.skinFile = '/usr/share/enigma2/Aglare-FHD-PLI/skin.xml'
         self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
         self['Preview'] = Pixmap()
         list = []
@@ -190,7 +190,7 @@ class AglareSetup(ConfigListScreen, Screen):
         self.UpdatePicture()
 
     def info(self):
-        aboutbox = self.session.open(MessageBox, _('Setup Aglare for Aglare-FHD v.%s') % version, MessageBox.TYPE_INFO)
+        aboutbox = self.session.open(MessageBox, _('Setup Aglare for Aglare-FHD-Pli v.%s') % version, MessageBox.TYPE_INFO)
         aboutbox.setTitle(_('Info...'))
 
     def keyLeft(self):

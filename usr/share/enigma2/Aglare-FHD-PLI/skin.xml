@@ -1,6 +1,6 @@
 ﻿<skin>
     <!-- *************************************************** -->
-    <!-- Aglare-FHD skin                                 -->
+    <!-- Aglare-FHD-PLI skin                                 -->
     <!-- by MNASR                                            -->
     <!-- Currently Tested on PLI v9.X                        -->
     <!-- You are free to edit or modify this                 -->
@@ -11,7 +11,7 @@
     <!-- Lululla , Madhouse , digiteng ,kitte888 and kiddac  -->
     <!-- *************************************************** -->
     <copyright>
-        <abouth name="Aglare-FHD">
+        <abouth name="Aglare-FHD-PLI">
             author="MNASR"
             license="Open"
             Support="OpenPLI, OBH and OpenVIX"
@@ -212,8 +212,8 @@
   <parameter name="WeatherPluginSearchresult" value="500,0,500,40" />
   </parameters>
   <switchpixmap>
-    <pixmap name="menu_on" filename="Aglare-FHD/icons/menu_on.png" />
-    <pixmap name="menu_off" filename="Aglare-FHD/icons/menu_off.png" />
+    <pixmap name="menu_on" filename="Aglare-FHD-PLI/icons/menu_on.png" />
+    <pixmap name="menu_off" filename="Aglare-FHD-PLI/icons/menu_off.png" />
   </switchpixmap>
   <windowstyle type="skinned" id="0">
     <scrolllabel scrollbarMode="showOnDemand" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
@@ -232,27 +232,27 @@
     <color name="WindowTitleForeground" color="chselfg" />
     <color name="WindowTitleBackground" color="background" />
     <borderset name="bsWindow">
-      <pixmap pos="bpTopLeft" filename="Aglare-FHD/window/b_tl_shadow.png" />
-      <pixmap pos="bpTop" filename="Aglare-FHD/window/b_t_shadow.png" />
-      <pixmap pos="bpTopRight" filename="Aglare-FHD/window/b_tr_shadow.png" />
-      <pixmap pos="bpLeft" filename="Aglare-FHD/window/b_l_shadow.png" />
-      <pixmap pos="bpRight" filename="Aglare-FHD/window/b_r_shadow.png" />
-      <pixmap pos="bpBottomLeft" filename="Aglare-FHD/window/b_bl_shadow.png" />
-      <pixmap pos="bpBottom" filename="Aglare-FHD/window/b_b_shadow.png" />
-      <pixmap pos="bpBottomRight" filename="Aglare-FHD/window/b_br_shadow.png" />
+      <pixmap pos="bpTopLeft" filename="Aglare-FHD-PLI/window/b_tl_shadow.png" />
+      <pixmap pos="bpTop" filename="Aglare-FHD-PLI/window/b_t_shadow.png" />
+      <pixmap pos="bpTopRight" filename="Aglare-FHD-PLI/window/b_tr_shadow.png" />
+      <pixmap pos="bpLeft" filename="Aglare-FHD-PLI/window/b_l_shadow.png" />
+      <pixmap pos="bpRight" filename="Aglare-FHD-PLI/window/b_r_shadow.png" />
+      <pixmap pos="bpBottomLeft" filename="Aglare-FHD-PLI/window/b_bl_shadow.png" />
+      <pixmap pos="bpBottom" filename="Aglare-FHD-PLI/window/b_b_shadow.png" />
+      <pixmap pos="bpBottomRight" filename="Aglare-FHD-PLI/window/b_br_shadow.png" />
     </borderset>
   </windowstyle>
   <include filename="skin_templates.xml" />
 <fonts>
     <font filename="lcd.ttf" name="LCD" scale="100" />
     <font filename="tuxtxt.ttf" name="Console" scale="100" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/verdana.ttf" name="Regular" scale="92" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/DroidSans.ttf" name="Regularn" scale="100" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/DroidSans-Bold.ttf" name="Bold" scale="100" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/arial.ttf" name="Replacement" scale="100" replacement="1" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/icomoon.ttf" name="icomoon" scale="100" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/OpenSans-Regular.ttf" name="OpenSans" scale="100" />
-    <font filename="/usr/share/enigma2/Aglare-FHD/fonts/TickingTimebombBB.ttf" name="digiclock" scale="100" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/verdana.ttf" name="Regular" scale="92" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/DroidSans.ttf" name="Regularn" scale="100" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/DroidSans-Bold.ttf" name="Bold" scale="100" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/arial.ttf" name="Replacement" scale="100" replacement="1" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/icomoon.ttf" name="icomoon" scale="100" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/OpenSans-Regular.ttf" name="OpenSans" scale="100" />
+    <font filename="/usr/share/enigma2/Aglare-FHD-PLI/fonts/TickingTimebombBB.ttf" name="digiclock" scale="100" />
     <alias name="PluginBrowser0" font="Regular" size="28" height="60" />
     <alias name="PluginBrowser1" font="Regular" size="24" />
     <alias name="ChoiceList" font="Regular" size="30" height="48" />
@@ -813,7 +813,7 @@ MultiContentEntryText(pos = (830, 8), size = (30, 38),  font = 1, flags = RT_HAL
     <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
     <eLabel name="" position="1660,826" size="180,180" font="icomoon; 100" text="" halign="center" zPosition="99" transparent="1" />
     <eLabel backgroundColor="sidec2" cornerRadius="90" position="1600,788" size="500,180" />
-    <ePixmap name="" position="1161,616" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD/boximage.png" alphatest="on" scale="1" />
+    <ePixmap name="" position="1161,616" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD-PLI/boximage.png" alphatest="on" scale="1" />
   </screen>
   <screen name="menu_scan" position="0,0" size="1920,1080" title="Main menu" backgroundColor="black" flags="wfNoBorder">
     <panel name="titletemp" />
@@ -1434,12 +1434,12 @@ MultiContentEntryText(pos = (0, 0), size = (890, 300), flags = RT_HALIGN_CENTER|
       <convert type="EventTime">Progress</convert>
     </widget>
     <widget source="Event" render="AglarePosterX" position="1138,126" size="184,276" zPosition="99" cornerRadius="14" />
-    <widget name="timeline0" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
-    <widget name="timeline1" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
-    <widget name="timeline2" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
-    <widget name="timeline3" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
-    <widget name="timeline4" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
-    <widget name="timeline5" pixmap="Aglare-FHD/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline0" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline1" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline2" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline3" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline4" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
+    <widget name="timeline5" pixmap="Aglare-FHD-PLI/epg/timeline.png" position="0,455" size="1,500" zPosition="1" />
     <widget source="session.CurrentService" render="Label" position="1376,88" size="492,40" font="Regular; 30" borderWidth="1" backgroundColor="background" transparent="1" halign="center" zPosition="5" valign="center" noWrap="1" foregroundColor="foreground">
       <convert type="ServiceName">Name</convert>
     </widget>
@@ -1634,7 +1634,7 @@ MultiContentEntryPixmap(pos = (20,6), size = (60,40), png = 2), # index 2 is the
     <eLabel name="" position="1430,470" size="52,52" font="icomoon; 30" text="" halign="center" zPosition="99" transparent="1" />
     <eLabel name="" position="1598,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="OK" />
     <eLabel name="" position="1658,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="MENU" />
-    <widget name="repeat" pixmaps="Aglare-FHD/buttons/repeat_off.png,Aglare-FHD/buttons/repeat_on.png" position="50,780" size="105,45" transparent="1" alphatest="blend" font="Regular; 24" zPosition="4" />
+    <widget name="repeat" pixmaps="Aglare-FHD-PLI/buttons/repeat_off.png,Aglare-FHD-PLI/buttons/repeat_on.png" position="50,780" size="105,45" transparent="1" alphatest="blend" font="Regular; 24" zPosition="4" />
     <widget name="filelist" position="50,190" size="1054,550" itemHeight="50" font="Regular;28" enableWrapAround="1" transparent="1" itemCornerRadius="8" valign="center" scrollbarMode="showOnDemand" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
     <eLabel position="50,780" size="1054,45" zPosition="2" text="Playlist" font="Regular; 34" backgroundColor="background" transparent="1" halign="center" />
     <eLabel position="50,140" size="1054,45" zPosition="2" text="Filelist" font="Regular; 34" backgroundColor="background" transparent="1" halign="center" />
@@ -2203,7 +2203,7 @@ MultiContentEntryText(pos=(435,75), size=(430,30), text = 2, font = 1, flags = R
     <widget name="arrowdown2" position="-100,-100" size="56,105" pixmap="skin_default/arrowdown.png" zPosition="11" alphatest="blend" />
     <widget name="arrowup" position="-100,-100" size="56,105" pixmap="skin_default/arrowup.png" zPosition="11" alphatest="blend" />
     <widget name="arrowup2" position="-100,-100" size="56,105" pixmap="skin_default/arrowup.png" zPosition="11" alphatest="blend" />
-    <widget name="wizard" pixmap="Aglare-FHD/skin_default/wizard.png" position="250,230" zPosition="10" size="240,240" alphatest="blend" transparent="1" />
+    <widget name="wizard" pixmap="Aglare-FHD-PLI/skin_default/wizard.png" position="250,230" zPosition="10" size="240,240" alphatest="blend" transparent="1" />
     <widget name="languagetext" position="306,960" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
     <widget name="text" position="987,230" size="477,450" font="Regular; 30" transparent="1" backgroundColor="background" valign="top" />
     <widget source="list" render="Listbox" position="250,570" size="600,350" transparent="1" itemHeight="50">
@@ -2733,7 +2733,7 @@ MultiContentEntryText(pos=(160,1), size=(700,100), font=0, flags=RT_HALIGN_LEFT|
     <eLabel backgroundColor="wpmc" cornerRadius="20" position="0,0" size="1920,1080" zPosition="-99" />
     <eLabel name="" position="1498,1000" size="400,80" backgroundColor="background" text="Designed by MNASR" transparent="1" halign="center" foregroundColor="yellow" font="Regular; 34" />
     <eLabel name="" position="211,244" size="1498,410" cornerRadius="60" backgroundColor="mcolor6" />
-    <eLabel name="" position="260,264" size="1400,370" zPosition="1" text="Aglare-FHD" font="Regular; 100" halign="center" valign="center" backgroundColor="mcolor2" />
+    <eLabel name="" position="260,264" size="1400,370" zPosition="1" text="Aglare-FHD-PLI" font="Regular; 100" halign="center" valign="center" backgroundColor="mcolor2" />
   </screen>
   <screen name="Screensaver" title="ScreenSaver" position="fill" flags="wfNoBorder" backgroundColor="transparent" transparent="0">
     <eLabel position="0,0" backgroundColor="background" zPosition="0" />
@@ -3443,7 +3443,7 @@ MultiContentEntryText(pos = (80,0),size = (900,50),font=0,flags = RT_HALIGN_LEFT
     <panel name="pigscreen885" />
     <widget name="Picture" position="1223,671" size="454,255" alphatest="blend" />
   </screen>
-  <screen name="AtileHD_About" position="center,center" size="400,170" title="Aglare-FHD">
+  <screen name="AtileHD_About" position="center,center" size="400,170" title="Aglare-FHD-PLI">
     <eLabel text="MNASR" position="center,0" size="210,50" font="Regular; 42" halign="center" backgroundColor="background" foregroundColor="mainskincolor" />
     <ePixmap position="center,50" size="210,120" pixmap="picon_default.png" alphatest="blend" zPosition="10" />
   </screen>
@@ -3608,7 +3608,7 @@ self.instance.move(ePoint((1920-wsizex)//2, (1080-wsizey)//(count &gt; 7 and 2 o
     <widget source="session.VideoPicture" render="Pig" position="1299,105" zPosition="20" size="600,338" backgroundColor="transparent" transparent="0" cornerRadius="14" />
     <ePixmap name="" position="1660,788" size="180,180" zPosition="99" pixmap="main/ico/aglarelogo.png" transparent="1" alphatest="on" />
     <eLabel backgroundColor="sidec2" cornerRadius="90" position="1600,788" size="500,180" />
-    <ePixmap name="" position="1322,494" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD/boximage.png" alphatest="on" scale="1" />
+    <ePixmap name="" position="1322,494" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD-PLI/boximage.png" alphatest="on" scale="1" />
   </screen>
   <screen name="MultiBootManager" position="fill" title="MultiBoot Image Selector" flags="wfNoBorder" backgroundColor="transparent">
     <panel name="titletemp" />
@@ -5929,7 +5929,7 @@ MultiContentEntryPixmapAlphaBlend(pos = (10, 15), size = (50, 50), png = 1),
     <eLabel backgroundColor="sidec2" cornerRadius="90" position="1600,788" size="500,180" />
   </screen>
   <screen name="Nab_ConnectPop" position="center,210" size="494,145" title="Connection in progress" flags="wfNoBorder">
-    <widget name="connect" position="0,0" size="494,145" zPosition="-1" pixmaps="Aglare-FHD/obh/connection_1.png,Aglare-FHD/obh/connection_2.png,Aglare-FHD/obh/connection_3.png,Aglare-FHD/obh/connection_4.png,Aglare-FHD/obh/connection_5.png" transparent="1" />
+    <widget name="connect" position="0,0" size="494,145" zPosition="-1" pixmaps="Aglare-FHD-PLI/obh/connection_1.png,Aglare-FHD-PLI/obh/connection_2.png,Aglare-FHD-PLI/obh/connection_3.png,Aglare-FHD-PLI/obh/connection_4.png,Aglare-FHD-PLI/obh/connection_5.png" transparent="1" />
     <widget name="lab1" position="5,90" halign="center" size="485,51" zPosition="1" font="Regular; 28" valign="center" backgroundColor="background" transparent="1" />
   </screen>
   <screen name="Nab_downCat" position="0,0" size="1920,1080" title="Downloads Manager" backgroundColor="transparent" flags="wfNoBorder">
@@ -6091,7 +6091,7 @@ MultiContentEntryPixmapAlphaBlend(pos = (10, 20), size = (80, 80), png = 2),
     <widget source="lab2" render="Label" position="997,660" size="620,45" font="Regular;36" zPosition="2" halign="left" transparent="1" />
     <widget source="lab3" render="Label" position="997,710" size="620,45" font="Regular;36" zPosition="2" halign="left" transparent="1" />
     <widget name="AboutScrollLabel" position="36,98" size="890,900" font="Regular;30" transparent="1" valign="top" scrollbarMode="showOnDemand" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
-    <ePixmap name="" position="957,845" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD/boximage.png" alphatest="on" scale="1" />
+    <ePixmap name="" position="957,845" size="550,155" pixmap="/usr/share/enigma2/Aglare-FHD-PLI/boximage.png" alphatest="on" scale="1" />
     <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
     <eLabel name="" position="1658,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="MENU" />
     <eLabel name="" position="1660,826" size="180,180" font="icomoon; 100" text="" halign="center" zPosition="99" transparent="1" />
@@ -6407,7 +6407,7 @@ MultiContentEntryPixmapAlphaTest(pos = (8, 87), size = (0, 0), png = 5), # index
     <panel name="pigscreen885" />
     <widget name="myMenu" position="36,100" size="890,900" scrollbarMode="showOnDemand" halign="left" valign="center" itemHeight="50" font="Regular;30" itemCornerRadius="8" />
   </screen>
-  <screen name="AglareSetup" position="0,0" size="1920,1080" title="Aglare-FHD Skin Controler" flags="wfNoBorder">
+  <screen name="AglareSetup" position="0,0" size="1920,1080" title="Aglare-FHD-PLI Skin Controler" flags="wfNoBorder">
     <panel name="titletemp" />
     <panel name="menutemp" />
     <panel name="configlist45" />
