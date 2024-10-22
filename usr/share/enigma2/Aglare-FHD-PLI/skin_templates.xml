@@ -577,8 +577,8 @@
     <widget backgroundColor="background" font="Regular; 22" foregroundColor="white" halign="center" position="1446,813" render="Label" size="60,34" source="session.CurrentService" transparent="1" zPosition="99" text="100%" valign="center">
       <convert type="AglareCpuUsage">Total</convert>
     </widget>
-    <eLabel name="" position="1520,812" size="150,36" backgroundColor="mcolor4" transparent="0" cornerRadius="10" zPosition="1" />
-    <widget source="session.CurrentService" render="Label" position="1566,813" size="100,34" font="Regular; 22" halign="center" backgroundColor="background" zPosition="99" transparent="1" text="25888" valign="center">
+    <eLabel name="" position="1520,812" size="160,36" backgroundColor="mcolor4" transparent="0" cornerRadius="10" zPosition="1" />
+    <widget source="session.CurrentService" render="Label" position="1566,813" size="110,34" font="Regular; 22" halign="center" backgroundColor="background" zPosition="99" transparent="1" text="25888" valign="center">
       <convert type="AglareBitrate">VideoBitrateUnits</convert>
     </widget>
     <widget source="session.CurrentService" render="FixedLabel" position="490,866" size="50,36" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="10" font="icomoon; 34" zPosition="12" text="">
@@ -638,9 +638,9 @@
     </widget>
     <eLabel name="" position="1590,855" size="50,36" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="10" font="Bold; 22" zPosition="1" text="TXT" foregroundColor="black1" />
     <eLabel name="" position="1525,813" size="38,34" font="Regular; 22" halign="center" backgroundColor="background" zPosition="99" transparent="1" text="BR" valign="center" />
-    <eLabel name="" position="1411,814" size="44,34" backgroundColor="background" foregroundColor="white" halign="center" font="icomoon; 26" text="" zPosition="4" transparent="1" />
+    <eLabel name="" position="1411,816" size="44,34" backgroundColor="background" foregroundColor="white" halign="center" font="icomoon; 26" text="" zPosition="4" transparent="1" />
     <eLabel backgroundColor="igsdt" cornerRadius="10" position="10,1000" size="1900,70" zPosition="-98" />
-    <widget source="session.CurrentService" render="Label" position="490,908" size="316,30" font="Regular; 24" backgroundColor="background" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="490,908" size="316,30" font="Regular; 24" backgroundColor="black" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
       <convert type="AglareAccess">CamName</convert>
     </widget>
     <widget source="session.CurrentService" render="Label" position="86,903" size="390,30" font="Regular; 24" backgroundColor="background" transparent="1" halign="left" zPosition="99" valign="center" noWrap="1" foregroundColor="black">

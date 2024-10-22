@@ -31,7 +31,7 @@ else:
     from urllib2 import Request
 
 
-version = '4.3'
+version = '4.4'
 
 config.plugins.Aglare= ConfigSubsection()
 config.plugins.Aglare.colorSelector = ConfigSelection(default='head', choices=[
@@ -350,7 +350,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.t')
+            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')

@@ -51,31 +51,34 @@ PY3 = False
 if sys.version_info[0] >= 3:
     PY3 = True
     unicode = str
-    unichr = chr
-    long = int
     import queue
     import html
     html_parser = html
     from _thread import start_new_thread
     from urllib.error import HTTPError, URLError
     from urllib.request import urlopen
-    from urllib.parse import quote_plus, quote
+    from urllib.parse import quote_plus
 else:
     import Queue
     from thread import start_new_thread
     from urllib2 import HTTPError, URLError
     from urllib2 import urlopen
-    from urllib import quote_plus, quote
+    from urllib import quote_plus
     from HTMLParser import HTMLParser
     html_parser = HTMLParser()
 
 
 try:
-    from urllib import unquote
+    from urllib import unquote, quote
 except ImportError:
-    from urllib.parse import unquote
+    from urllib.parse import unquote, quote
+
 
 epgcache = eEPGCache.getInstance()
+if PY3:
+    pdb = queue.LifoQueue()
+else:
+    pdb = Queue.LifoQueue()
 
 
 def isMountReadonly(mnt):
@@ -103,6 +106,8 @@ def isMountedInRW(path):
     return False
 
 
+cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
+noposter = "/usr/share/enigma2/%s/main/noposter.jpg" % cur_skin
 path_folder = "/tmp/backdrop"
 if os.path.exists("/media/hdd"):
     if isMountedInRW("/media/hdd"):
@@ -133,7 +138,6 @@ except:
 # WITH THE NUMBER OF ITEMS EXPECTED (BLANK LINE IN BOUQUET CONSIDERED)
 # IF NOT SET OR WRONG FILE THE AUTOMATIC BACKDROP GENERATION WILL WORK FOR
 # THE CHANNELS THAT YOU ARE VIEWING IN THE ENIGMA SESSION
-
 
 def SearchBouquetTerrestrial():
     import glob
@@ -202,27 +206,27 @@ def quoteEventName(eventName):
 
 
 REGEX = re.compile(
-    r'([\(\[]).*?([\)\]])|'
-    r'(: odc.\d+)|'
-    r'(\d+: odc.\d+)|'
-    r'(\d+ odc.\d+)|(:)|'
-    r'( -(.*?).*)|(,)|'
-    r'!|'
-    r'/.*|'
-    r'\|\s[0-9]+\+|'
-    r'[0-9]+\+|'
-    r'\s\*\d{4}\Z|'
-    r'([\(\[\|].*?[\)\]\|])|'
-    r'(\"|\"\.|\"\,|\.)\s.+|'
-    r'\"|:|'
-    r'Премьера\.\s|'
-    r'(х|Х|м|М|т|Т|д|Д)/ф\s|'
-    r'(х|Х|м|М|т|Т|д|Д)/с\s|'
-    r'\s(с|С)(езон|ерия|-н|-я)\s.+|'
-    r'\s\d{1,3}\s(ч|ч\.|с\.|с)\s.+|'
-    r'\.\s\d{1,3}\s(ч|ч\.|с\.|с)\s.+|'
-    r'\s(ч|ч\.|с\.|с)\s\d{1,3}.+|'
-    r'\d{1,3}(-я|-й|\sс-н).+|', re.DOTALL)
+    r'[\(\[].*?[\)\]]|'                    # Parentesi tonde o quadre
+    r':?\s?odc\.\d+|'                      # odc. con o senza numero prima
+    r'\d+\s?:?\s?odc\.\d+|'                # numero con odc.
+    r'[:!]|'                               # due punti o punto esclamativo
+    r'\s-\s.*|'                            # trattino con testo successivo
+    r',|'                                  # virgola
+    r'/.*|'                                # tutto dopo uno slash
+    r'\|\s?\d+\+|'                         # | seguito da numero e +
+    r'\d+\+|'                              # numero seguito da +
+    r'\s\*\d{4}\Z|'                        # * seguito da un anno a 4 cifre
+    r'[\(\[\|].*?[\)\]\|]|'                # Parentesi tonde, quadre o pipe
+    r'(?:\"[\.|\,]?\s.*|\"|'               # Testo tra virgolette
+    r'\.\s.+)|'                            # Punto seguito da testo
+    r'Премьера\.\s|'                       # Specifico per il russo
+    r'[хмтдХМТД]/[фс]\s|'                  # Pattern per il russo con /ф o /с
+    r'\s[сС](?:езон|ерия|-н|-я)\s.*|'      # Stagione o episodio in russo
+    r'\s\d{1,3}\s[чсЧС]\.?\s.*|'           # numero di parte/episodio in russo
+    r'\.\s\d{1,3}\s[чсЧС]\.?\s.*|'         # numero di parte/episodio in russo con punto
+    r'\s[чсЧС]\.?\s\d{1,3}.*|'             # Parte/Episodio in russo
+    r'\d{1,3}-(?:я|й)\s?с-н.*',            # Finale con numero e suffisso russo
+    re.DOTALL)
 
 
 def intCheck():
@@ -240,14 +244,14 @@ def intCheck():
 
 
 def remove_accents(string):
-    if type(string) is not unicode:
-        string = unicode(string, encoding='utf-8')
-    string = re.sub(u"[àáâãäå]", 'a', string)
-    string = re.sub(u"[èéêë]", 'e', string)
-    string = re.sub(u"[ìíîï]", 'i', string)
-    string = re.sub(u"[òóôõö]", 'o', string)
-    string = re.sub(u"[ùúûü]", 'u', string)
-    string = re.sub(u"[ýÿ]", 'y', string)
+    import unicodedata
+    if PY3 is False:
+        if type(string) is not unicode:
+            string = unicode(string, encoding='utf-8')
+    # Normalizza la stringa usando Unicode NFD (Normalization Form D)
+    string = unicodedata.normalize('NFD', string)
+    # Rimuove i segni diacritici (accents) lasciando solo i caratteri base
+    string = re.sub(r'[\u0300-\u036f]', '', string)
     return string
 
 
@@ -302,11 +306,18 @@ def dataenc(data):
 
 def convtext(text=''):
     try:
-        if text != '' or text is not None or text != 'None':
+        if text is None:
+            print('return None original text: ', type(text))
+            return  # Esci dalla funzione se text è None
+        if text == '':
+            print('text is an empty string')
+        else:
             print('original text: ', text)
             text = text.lower()
+            print('lowercased text: ', text)
             text = remove_accents(text)
             print('remove_accents text: ', text)
+
             # #
             text = cutName(text)
             text = getCleanTitle(text)
@@ -347,7 +358,6 @@ def convtext(text=''):
                 text = 'la7'
             if 'skytg24' in text:
                 text = 'skytg24'
-
             # remove xx: at start
             text = re.sub(r'^\w{2}:', '', text)
             # remove xx|xx at start
@@ -364,14 +374,13 @@ def convtext(text=''):
             # remove all content between and including [] multiple times
             text = re.sub(r'\[\[.*?\]\]|\[.*?\]', '', text)
             # remove episode number in arabic series
-            text = re.sub(r' ح', '', text)
+            text = re.sub(r' +ح', '', text)
             # remove season number in arabic series
-            text = re.sub(r' +?ج$', '', text)
+            text = re.sub(r' +ج', '', text)
             # remove season number in arabic series
-            text = re.sub(r' م', '', text)
+            text = re.sub(r' +م', '', text)
             # List of bad strings to remove
             bad_strings = [
-
                 "ae|", "al|", "ar|", "at|", "ba|", "be|", "bg|", "br|", "cg|", "ch|", "cz|", "da|", "de|", "dk|",
                 "ee|", "en|", "es|", "eu|", "ex-yu|", "fi|", "fr|", "gr|", "hr|", "hu|", "in|", "ir|", "it|", "lt|",
                 "mk|", "mx|", "nl|", "no|", "pl|", "pt|", "ro|", "rs|", "ru|", "se|", "si|", "sk|", "sp|", "tr|",
@@ -400,7 +409,6 @@ def convtext(text=''):
             text = bad_suffix_pattern.sub('', text)
             # Replace ".", "_", "'" with " "
             text = re.sub(r'[._\']', ' ', text)
-
             # recoded lulu
             text = text + 'FIN'
             '''
@@ -413,7 +421,7 @@ def convtext(text=''):
             text = re.sub(r'(odc.\d+)+.*?FIN', '', text)
             text = re.sub(r'(\d+)+.*?FIN', '', text)
             text = text.partition("(")[0] + 'FIN'
-            text = re.sub("\\s\d+", "", text)
+            text = re.sub(r"\\s\d+", "", text)
             text = text.partition("(")[0]
             # text = text.partition(":")[0]  # not work on csi: new york (only-->  csi)
             text = text.partition(" -")[0]
@@ -423,30 +431,22 @@ def convtext(text=''):
             text = re.sub(r"[-,?!/\.\":]", '', text)  # replace (- or , or ! or / or . or " or :) by space
             # recoded  end
             text = text.strip(' -')
-            # forced 
+            # forced
             text = text.replace('XXXXXX', '60')
             text = text.replace('brunobarbierix', 'bruno barbieri - 4 hotel')
             text = quote(text, safe="")
             print('text safe: ', text)
-            # print('Final text: ', text)
-        else:
-            text = text
         return unquote(text).capitalize()
     except Exception as e:
         print('convtext error: ', e)
         pass
 
 
-if PY3:
-    pdb = queue.LifoQueue()
-else:
-    pdb = Queue.LifoQueue()
-
-
 class BackdropDB(AglareBackdropXDownloadThread):
     def __init__(self):
         AglareBackdropXDownloadThread.__init__(self)
         self.logdbg = None
+        self.pstcanal = None
 
     def run(self):
         self.logDB("[QUEUE] : Initialized")
@@ -454,7 +454,7 @@ class BackdropDB(AglareBackdropXDownloadThread):
             canal = pdb.get()
             self.logDB("[QUEUE] : {} : {}-{} ({})".format(canal[0], canal[1], canal[2], canal[5]))
             self.pstcanal = convtext(canal[5])
-            if self.pstcanal and self.pstcanal != 'None' or self.pstcanal is not None:
+            if self.pstcanal != 'None' or self.pstcanal is not None:
                 dwn_backdrop = path_folder + '/' + self.pstcanal + ".jpg"
                 if os.path.exists(dwn_backdrop):
                     os.utime(dwn_backdrop, (time.time(), time.time()))
@@ -483,12 +483,13 @@ class BackdropDB(AglareBackdropXDownloadThread):
                 pdb.task_done()
 
     def logDB(self, logmsg):
+        import traceback
         try:
-            w = open("/tmp/BackdropDB.log", "a+")
-            w.write("%s\n" % logmsg)
-            w.close()
+            with open("/tmp/BackdropDB.log", "a") as w:
+                w.write("%s\n" % logmsg)
         except Exception as e:
-            print('logDB exceptions', str(e))
+            print('logDB error:', str(e))
+            traceback.print_exc()
 
 
 threadDB = BackdropDB()
@@ -505,7 +506,7 @@ class BackdropAutoDB(AglareBackdropXDownloadThread):
         while True:
             time.sleep(7200)  # 7200 - Start every 2 hours
             self.logAutoDB("[AutoDB] *** Running ***")
-            self.pstcanal = ''
+            self.pstcanal = None
             # AUTO ADD NEW FILES - 1440 (24 hours ahead)
             for service in apdb.values():
                 try:
@@ -528,10 +529,10 @@ class BackdropAutoDB(AglareBackdropXDownloadThread):
                             canal[4] = evt[6]
                             canal[5] = canal[2]
                             self.pstcanal = convtext(canal[5])
-                            pstrNm = path_folder + '/' + self.pstcanal + ".jpg"
-                            self.pstcanal = str(pstrNm)
+                            self.pstrNm = path_folder + '/' + self.pstcanal + ".jpg"
+                            self.pstcanal = str(self.pstrNm)
                             dwn_backdrop = self.pstcanal
-                            if os.path.exists(dwn_backdrop):
+                            if os.path.join(path_folder, dwn_backdrop):
                                 os.utime(dwn_backdrop, (time.time(), time.time()))
                             # if lng == "fr":
                                 # if not os.path.exists(dwn_backdrop):
@@ -583,12 +584,13 @@ class BackdropAutoDB(AglareBackdropXDownloadThread):
             self.logAutoDB("[AutoDB] *** Stopping ***")
 
     def logAutoDB(self, logmsg):
+        import traceback
         try:
-            w = open("/tmp/BackdropAutoDB.log", "a+")
-            w.write("%s\n" % logmsg)
-            w.close()
+            with open("/tmp/BackdropAutoDb.log", "a") as w:
+                w.write("%s\n" % logmsg)
         except Exception as e:
-            print('error logAutoDB 2 ', e)
+            print('logBackdrop error', str(e))
+            traceback.print_exc()
 
 
 threadAutoDB = BackdropAutoDB()
@@ -606,7 +608,7 @@ class AglareBackdropX(Renderer):
         self.canal = [None, None, None, None, None, None]
         self.oldCanal = None
         self.logdbg = None
-        self.pstcanal = ''
+        self.pstcanal = None
         self.timer = eTimer()
         try:
             self.timer_conn = self.timer.timeout.connect(self.showBackdrop)
@@ -692,8 +694,9 @@ class AglareBackdropX(Renderer):
                 self.oldCanal = curCanal
                 self.logBackdrop("Service: {} [{}] : {} : {}".format(servicetype, self.nxts, self.canal[0], self.oldCanal))
                 self.pstcanal = convtext(self.canal[5])
-                self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                self.backrNm = str(self.backrNm)
+                if self.pstcanal is not None:
+                    self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
+                    self.backrNm = str(self.backrNm)
                 if os.path.exists(self.backrNm):
                     self.timer.start(10, True)
                 else:
@@ -710,10 +713,11 @@ class AglareBackdropX(Renderer):
         if self.instance:
             self.instance.hide()
         if self.canal[5]:
-            if not os.path.exists(self.backrNm):
+            if self.backrNm is not None and not os.path.exists(self.backrNm):
                 self.pstcanal = convtext(self.canal[5])
-                self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                self.backrNm = str(self.backrNm)
+                if self.pstcanal is not None:
+                    self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
+                    self.backrNm = str(self.backrNm)
             if os.path.exists(self.backrNm):
                 self.logBackdrop("[LOAD : showBackdrop] {}".format(self.backrNm))
                 self.instance.setPixmap(loadJPG(self.backrNm))
@@ -724,15 +728,16 @@ class AglareBackdropX(Renderer):
         if self.instance:
             self.instance.hide()
         if self.canal[5]:
-            if not os.path.exists(self.backrNm):
+            if self.backrNm is not None and not os.path.exists(self.backrNm):
                 self.pstcanal = convtext(self.canal[5])
-                self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                self.backrNm = str(self.backrNm)
+                if self.pstcanal is not None:
+                    self.backrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
+                    self.backrNm = str(self.backrNm)
             loop = 180
             found = None
             self.logBackdrop("[LOOP: waitBackdrop] {}".format(self.backrNm))
             while loop >= 0:
-                if os.path.exists(self.backrNm):
+                if self.backrNm is not None and os.path.exists(self.backrNm):
                     loop = 0
                     found = True
                 time.sleep(0.5)
@@ -741,9 +746,10 @@ class AglareBackdropX(Renderer):
                 self.timer.start(20, True)
 
     def logBackdrop(self, logmsg):
+        import traceback
         try:
-            w = open("/tmp/AglareBackdropX.log", "a+")
-            w.write("%s\n" % logmsg)
-            w.close()
+            with open("/tmp/logBackdrop.log", "a") as w:
+                w.write("%s\n" % logmsg)
         except Exception as e:
-            print('logBackdrop error', e)
+            print('logBackdrop error', str(e))
+            traceback.print_exc()
