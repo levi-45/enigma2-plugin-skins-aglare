@@ -15,8 +15,8 @@
             author="MNASR"
             license="Open"
             Support="OpenPLI, OBH and OpenVIX"
-            Version="4.3"
-            Release date="27/09/2024"
+            Version="4.5"
+            Release date="30/10/2024"
             supporturl="www.linuxsat-support.com"
         </abouth>
     </copyright>
@@ -27,7 +27,7 @@
   <color name="black1" value="#00181818" />
   <color name="gold1" value="#20ffd700" />
   <color name="white1" value="#20ffffff" />
-    <color name="backgroundtrans1" value="#95000000" />
+  <color name="backgroundtrans1" value="#95000000" />
   <color name="backgroundtrans2" value="#95161414" />
   <color name="#101010" value="#00101010" />
   <color name="#10101010" value="#10101010" />

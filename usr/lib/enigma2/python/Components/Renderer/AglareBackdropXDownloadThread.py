@@ -680,7 +680,6 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # if i in fds.lower():
                 # srch = "tv"  # :" + i
                 # break
-
         return srch, fd
 
     def UNAC(self, string):

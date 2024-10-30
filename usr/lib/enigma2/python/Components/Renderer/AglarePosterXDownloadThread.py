@@ -19,8 +19,6 @@ global my_cur_skin, srch
 PY3 = False
 if sys.version_info[0] >= 3:
     PY3 = True
-    unicode = str
-    unichr = chr
     import html
     html_parser = html
 else:

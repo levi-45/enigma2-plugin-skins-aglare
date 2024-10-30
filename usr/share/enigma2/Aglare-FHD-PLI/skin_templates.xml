@@ -135,32 +135,6 @@
     <eLabel backgroundColor="yellow" cornerRadius="3" position="652,1064" size="300,6" zPosition="-11" />
     <eLabel backgroundColor="blue" cornerRadius="3" position="962,1064" size="300,6" zPosition="-11" />
   </screen>
-  <screen name="egamiboxinfo" flags="wfNoBorder">
-    <ePixmap position="900,750" zPosition="2" size="50,50" pixmap="oDreamy-FHD/icons/ram.png" alphatest="blend" />
-    <widget source="session.Event_Now" render="Progress" position="980,750" size="600,10" backgroundColor="progbg" foregroundColor="#8293b3" cornerRadius="10" borderWidth="1" borderColor="mainskincolor" zPosition="6">
-      <convert type="EGLayoutInfo">MemTotal</convert>
-    </widget>
-    <widget source="session.CurrentService" render="Label" position="980,766" size="600,26" halign="left" valign="center" font="Regular;20" transparent="1" foregroundColor="yellow" backgroundColor="background" zPosition="6">
-      <convert type="EGLayoutInfo">MemTotal</convert>
-    </widget>
-    <ePixmap position="900,810" zPosition="2" size="50,50" pixmap="oDreamy-FHD/icons/cpu.png" alphatest="blend" />
-    <widget source="session.Event_Now" render="Progress" position="980,810" size="600,10" backgroundColor="progbg" foregroundColor="#8293b3" cornerRadius="10" borderWidth="1" borderColor="mainskincolor" zPosition="6">
-      <convert type="CpuUsage">$0</convert>
-    </widget>
-    <widget source="session.CurrentService" render="Label" position="980,826" size="600,26" halign="left" valign="center" font="Regular;20" transparent="1" foregroundColor="cyan1" backgroundColor="background" zPosition="6">
-      <convert type="CpuUsage">CPU:$0 (Core #1: $1, Core #2: $2)</convert>
-    </widget>
-    <ePixmap position="900,870" zPosition="2" size="50,50" pixmap="oDreamy-FHD/icons/flash.png" alphatest="blend" />
-    <widget source="session.Event_Now" render="Progress" position="980,870" size="600,10" backgroundColor="progbg" foregroundColor="#8293b3" cornerRadius="10" borderWidth="1" borderColor="mainskincolor" zPosition="6">
-      <convert type="EGLayoutInfo">FleshInfo</convert>
-    </widget>
-    <widget source="session.CurrentService" render="Label" position="980,886" size="600,26" halign="left" valign="center" font="Regular;20" transparent="1" foregroundColor="green" backgroundColor="background" zPosition="6">
-      <convert type="EGLayoutInfo">Flesh</convert>
-    </widget>
-  </screen>
-  <screen name="egamiteamlogo" flags="wfNoBorder">
-    <ePixmap name="" position="1270,850" size="416,70" zPosition="88" pixmap="egami/team_logo.png" alphatest="blend" />
-  </screen>
   <screen name="description" flags="wfNoBorder">
     <widget name="description" position="997,607" size="885,180" font="Regular; 24" halign="left" valign="top" backgroundColor="background" transparent="1" zPosition="55" />
   </screen>
@@ -190,37 +164,6 @@
     <widget font="Bold; 30" halign="right" position="1401,20" render="Label" size="500,40" source="global.CurrentTime" transparent="1">
       <convert type="ClockToText">Format:%a %d.%m.  %H:%M</convert>
     </widget>
-  </screen>
-  <screen name="epgtemp1" flags="wfNoBorder">
-    <panel name="timedate" />
-    <ePixmap name="" position="0,0" size="1920,1080" zPosition="-100" alphatest="off" pixmap="kindaa/epgbg.jpg" />
-    <widget source="session.VideoPicture" render="Pig" position="1376,88" zPosition="1" size="494,272" backgroundColor="transparent" transparent="0" />
-    <widget source="session.CurrentService" render="Label" position="1376,88" size="492,40" font="Regular; 30" borderWidth="1" backgroundColor="background" transparent="1" halign="center" zPosition="5" valign="center" noWrap="1" foregroundColor="foreground">
-      <convert type="ServiceName">Name</convert>
-    </widget>
-    <widget source="Event" render="Label" position="1370,478" size="500,40" font="Regular; 30" backgroundColor="background" transparent="1" halign="center" valign="top" noWrap="1">
-      <convert type="EventName">Name</convert>
-    </widget>
-    <widget source="Event" render="Progress" alphatest="on" pixmap="kindaa/epgeventprogress292.png" position="1574,540" size="292,16" transparent="1" zPosition="3">
-      <convert type="EventTime">Progress</convert>
-    </widget>
-    <eLabel name="" position="1568,586" size="120,40" text="Start :" transparent="1" font="Regular; 32" backgroundColor="background" zPosition="33" />
-    <widget source="Event" render="Label" position="1690,586" size="110,40" halign="left" font="Regular; 32" backgroundColor="background" transparent="1" valign="center" zPosition="10" foregroundColor="white">
-      <convert type="EventTime">StartTime</convert>
-      <convert type="ClockToText">Format:%H:%M</convert>
-    </widget>
-    <eLabel name="" position="1568,626" size="120,40" text="End :" transparent="1" font="Regular; 32" backgroundColor="background" zPosition="33" />
-    <widget source="Event" render="Label" position="1690,626" size="110,40" halign="left" font="Regular; 32" backgroundColor="background" transparent="1" valign="center" zPosition="10" foregroundColor="white">
-      <convert type="EventTime">EndTime</convert>
-      <convert type="ClockToText">Format:%H:%M</convert>
-    </widget>
-    <widget source="Event" render="AglareRunningText" options="movetype=running,startpoint=0,direction=top,steptime=100,startdelay=4000,wrap,always=0" position="1375,832" size="492,165" font="Regular; 24" backgroundColor="background" transparent="1" valign="top" zPosition="33" halign="left" foregroundColor="white">
-      <convert type="EventName">FullDescription</convert>
-    </widget>
-  </screen>
-  <screen name="epgtempv" flags="wfNoBorder">
-    <panel name="timedate" />
-    <ePixmap name="" position="0, 0" size="1920,1080" zPosition="-100" alphatest="off" pixmap="kindaa/epgverticalnopig.jpg" />
   </screen>
   <screen name="infobartemp" flags="wfNoBorder" position="0,0" backgroundColor="transparent">
     <!--<panel name="infobartemp" />-->
@@ -518,10 +461,10 @@
     <widget source="session.CurrentService" render="Picon" position="820,770" size="280,140" transparent="1" alphatest="blend" zPosition="10">
       <convert type="ServiceName">Reference</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="30,811" size="750,54" font="Regular; 50" backgroundColor="background" transparent="1" halign="left" zPosition="1" valign="center" noWrap="1" foregroundColor="mcolor5">
+    <widget source="session.CurrentService" render="Label" position="30,808" size="750,54" font="Regular; 50" backgroundColor="white" transparent="1" halign="left" zPosition="1" valign="center" noWrap="1" foregroundColor="mcolor5">
       <convert type="ServiceName">Name</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="812,921" zPosition="2" size="296,20" font="Regular; 19" halign="center" backgroundColor="background" transparent="1" valign="center" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="812,921" zPosition="2" size="296,20" font="Regular; 19" halign="center" backgroundColor="white" transparent="1" valign="center" foregroundColor="black">
       <convert type="AglareServName2">Provider</convert>
     </widget>
     <widget source="session.Event_Now" render="Label" position="50,956" size="200,35" halign="center" font="Regular; 32" backgroundColor="background" transparent="1" valign="center" zPosition="1">
@@ -560,13 +503,13 @@
     <widget source="session.FrontendStatus" render="Progress" pixmap="main/progfg30012.png" backgroundColor="progbg" position="1410,1022" size="300,12" zPosition="99" cornerRadius="5">
       <convert type="FrontendInfo">AGC</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="1300,899" zPosition="1" size="590,32" font="Regular; 30" halign="left" backgroundColor="black" transparent="1" valign="center" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="1300,899" zPosition="1" size="590,32" font="Regular; 30" halign="left" backgroundColor="white" transparent="1" valign="center" foregroundColor="black">
       <convert type="AglareServName2">%s %O %F %p %Y %f %M</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="30,869" size="280,30" font="Regular; 24" backgroundColor="background" transparent="1" halign="left" noWrap="1" valign="center" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="30,869" size="280,30" font="Regular; 24" backgroundColor="white" transparent="1" halign="left" noWrap="1" valign="center" foregroundColor="black">
       <convert type="AglareBase">ResCodec</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="310,869" size="150,30" font="Regular; 24" backgroundColor="background" transparent="1" halign="left" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="310,869" size="150,30" font="Regular; 24" backgroundColor="white" transparent="1" halign="left" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
       <convert type="AglareAudioInfo">AudioCodec</convert>
     </widget>
     <eLabel name="" position="1300,812" size="100,36" backgroundColor="mcolor4" halign="left" valign="center" transparent="0" cornerRadius="10" font="icomoon; 26" text="" zPosition="1" />
@@ -585,27 +528,27 @@
       <convert type="AglareRouteInfo">Lan</convert>
       <convert type="ConditionalShowHide" />
     </widget>
-    <widget source="session.CurrentService" position="554,866" size="227,36" render="Label" font="Regular; 28" halign="left" valign="center" backgroundColor="background" transparent="1" zPosition="10" text="192.168.222.222" foregroundColor="black">
+    <widget source="session.CurrentService" position="554,866" size="227,36" render="Label" font="Regular; 28" halign="left" valign="center" backgroundColor="white" transparent="1" zPosition="10" text="192.168.222.222" foregroundColor="black">
       <convert type="AglareTemp">Iplocal</convert>
     </widget>
     <widget source="session.CurrentService" render="FixedLabel" position="490,866" size="50,36" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="10" font="icomoon; 34" zPosition="11" text="">
       <convert type="AglareRouteInfo">Wifi</convert>
       <convert type="ConditionalShowHide" />
     </widget>
-    <widget font="Bold; 30" halign="center" position="1700,805" render="Label" size="200,40" source="global.CurrentTime" transparent="1" zPosition="1" foregroundColor="black">
+    <widget font="Bold; 30" halign="center" position="1700,805" render="Label" size="200,40" source="global.CurrentTime" transparent="1" zPosition="1" foregroundColor="black" backgroundColor="white">
       <convert type="ClockToText">Format:%H:%M</convert>
     </widget>
-    <widget font="Bold; 30" halign="center" position="1700,846" render="Label" size="200,40" source="global.CurrentTime" transparent="1" zPosition="1" foregroundColor="black">
+    <widget font="Bold; 30" halign="center" position="1700,846" render="Label" size="200,40" source="global.CurrentTime" transparent="1" zPosition="1" foregroundColor="black" backgroundColor="white">
       <convert type="ClockToText">Format:%a %d.%m</convert>
     </widget>
     <!--########weather#####-->
     <widget render="OAWeatherPixmap" position="1110,811" size="80,80" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1">
       <convert type="OAWeather">weathericon,current</convert>
     </widget>
-    <widget backgroundColor="black" font="Regular; 24" foregroundColor="black" halign="center" position="1104,878" render="Label" size="200,27" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <widget backgroundColor="white" font="Regular; 24" foregroundColor="black" halign="center" position="1104,878" render="Label" size="200,27" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
       <convert type="OAWeather">temperature_text,current</convert>
     </widget>
-    <widget noWrap="1" backgroundColor="red" font="Regular; 40" foregroundColor="red" render="Label" position="1196,822" size="92,50" source="session.OAWeather" transparent="1" zPosition="8" halign="left" valign="center">
+    <widget noWrap="1" backgroundColor="white" font="Regular; 40" foregroundColor="red" render="Label" position="1196,822" size="92,50" source="session.OAWeather" transparent="1" zPosition="8" halign="left" valign="center">
       <convert type="OAWeather">temperature_current</convert>
     </widget>
     <!--########weather#####-->
@@ -640,10 +583,10 @@
     <eLabel name="" position="1525,813" size="38,34" font="Regular; 22" halign="center" backgroundColor="background" zPosition="99" transparent="1" text="BR" valign="center" />
     <eLabel name="" position="1411,816" size="44,34" backgroundColor="background" foregroundColor="white" halign="center" font="icomoon; 26" text="" zPosition="4" transparent="1" />
     <eLabel backgroundColor="igsdt" cornerRadius="10" position="10,1000" size="1900,70" zPosition="-98" />
-    <widget source="session.CurrentService" render="Label" position="490,908" size="316,30" font="Regular; 24" backgroundColor="black" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="490,908" size="316,30" font="Regular; 24" backgroundColor="white" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
       <convert type="AglareAccess">CamName</convert>
     </widget>
-    <widget source="session.CurrentService" render="Label" position="86,903" size="390,30" font="Regular; 24" backgroundColor="background" transparent="1" halign="left" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
+    <widget source="session.CurrentService" render="Label" position="86,903" size="390,30" font="Regular; 24" backgroundColor="white" transparent="1" halign="left" zPosition="99" valign="center" noWrap="1" foregroundColor="black">
       <convert type="AglareCaidInfo2">%C : %R : %T</convert>
     </widget>
     <widget source="session.CurrentService" render="FixedLabel" position="30,900" size="50,36" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="10" font="icomoon; 34" zPosition="12" text="">
@@ -797,57 +740,7 @@
     <widget name="statusicon" position="73,850" zPosition="3" size="50,50" alphatest="blend" pixmaps="icons/pvr/play.png,icons/pvr/pause.png,icons/pvr/stop.png,icons/pvr/forward.png,icons/pvr/backward.png,icons/pvr/slow.png" />
     <eLabel name="" position="1848,902" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 20" zPosition="0" text="NO VPN" />
   </screen>
-  <screen name="epgtemp_pig" flags="wfNoBorder" position="0,0" backgroundColor="transparent">
-    <ePixmap name="" position="0, 0" size="1920,1080" pixmap="main/widepanel.jpg" zPosition="-99" />
-    <widget source="Title" render="Label" position="34,22" size="1102,50" font="Regular; 36" backgroundColor="background" transparent="1" foregroundColor="mainskincolor" valign="center" zPosition="22" halign="left" />
-    <ePixmap name="" position="34,1014" size="45,45" zPosition="99" pixmap="main/red.png" alphatest="on" />
-    <ePixmap name="" position="351,1014" size="45,45" zPosition="99" pixmap="main/green.png" alphatest="on" />
-    <ePixmap name="" position="666,1014" size="45,45" zPosition="99" pixmap="main/yellow.png" alphatest="on" />
-    <ePixmap name="" position="981,1014" size="45,45" zPosition="99" pixmap="main/blue.png" alphatest="on" />
-    <widget source="key_red" render="Label" position="79,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_green" render="Label" position="396,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_yellow" render="Label" position="711,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_blue" render="Label" position="1026,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <ePixmap name="" position="1460,1018" size="54,34" zPosition="99" pixmap="main/rtlt_button.png" alphatest="on" />
-    <ePixmap name="" position="1520,1018" size="54,34" zPosition="99" pixmap="main/updown_button.png" alphatest="on" />
-    <ePixmap name="" position="1620,1018" size="54,34" zPosition="99" pixmap="main/menu_button.png" alphatest="on" />
-    <ePixmap name="" position="1680,1018" size="54,34" zPosition="99" pixmap="main/info_button.png" alphatest="on" />
-    <!-- /* time -->
-    <widget source="global.CurrentTime" render="Label" position="1714,10" size="160,32" font="Regular; 28" valign="top" halign="center" backgroundColor="background" transparent="1" foregroundColor="foreground2" zPosition="89">
-      <convert type="ClockToText">Format:%H:%M:%S</convert>
-    </widget>
-    <widget source="global.CurrentTime" render="Label" position="1575,43" size="300,32" font="Regular; 28" halign="right" foregroundColor="foreground" backgroundColor="background" transparent="1" valign="top" zPosition="90">
-      <convert type="ClockToText">Format %a %d %b %Y</convert>
-    </widget>
-    <widget source="session.CurrentService" render="Label" position="1386,90" size="500,32" font="Regular; 28" borderWidth="1" backgroundColor="background" transparent="1" halign="center" foregroundColor="white" zPosition="30" valign="center" noWrap="1">
-      <convert type="ServiceName">Name</convert>
-    </widget>
-    <widget source="session.VideoPicture" render="Pig" position="1386,120" zPosition="20" size="500,282" backgroundColor="transparent" transparent="0" />
-  </screen>
   <!-- ################### -->
-  <screen name="epgtemp_nopig" flags="wfNoBorder" position="0,0" backgroundColor="transparent">
-    <ePixmap name="" position="0, 0" size="1920,1080" pixmap="main/widepanel.jpg" zPosition="-99" />
-    <widget source="Title" render="Label" position="34,22" size="1102,50" font="Regular; 36" backgroundColor="background" transparent="1" foregroundColor="mainskincolor" valign="center" zPosition="22" halign="left" />
-    <ePixmap name="" position="34,1014" size="45,45" zPosition="99" pixmap="main/red.png" alphatest="on" />
-    <ePixmap name="" position="351,1014" size="45,45" zPosition="99" pixmap="main/green.png" alphatest="on" />
-    <ePixmap name="" position="666,1014" size="45,45" zPosition="99" pixmap="main/yellow.png" alphatest="on" />
-    <ePixmap name="" position="981,1014" size="45,45" zPosition="99" pixmap="main/blue.png" alphatest="on" />
-    <widget source="key_red" render="Label" position="79,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_green" render="Label" position="396,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_yellow" render="Label" position="711,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <widget source="key_blue" render="Label" position="1026,1014" size="250,45" zPosition="11" font="Regular; 32" halign="left" backgroundColor="background" transparent="1" foregroundColor="white" />
-    <ePixmap name="" position="1460,1018" size="54,34" zPosition="99" pixmap="main/rtlt_button.png" alphatest="on" />
-    <ePixmap name="" position="1520,1018" size="54,34" zPosition="99" pixmap="main/updown_button.png" alphatest="on" />
-    <ePixmap name="" position="1620,1018" size="54,34" zPosition="99" pixmap="main/menu_button.png" alphatest="on" />
-    <ePixmap name="" position="1680,1018" size="54,34" zPosition="99" pixmap="main/info_button.png" alphatest="on" />
-    <!-- /* time -->
-    <widget source="global.CurrentTime" render="Label" position="1714,10" size="160,32" font="Regular; 28" valign="top" halign="center" backgroundColor="background" transparent="1" foregroundColor="foreground2" zPosition="89">
-      <convert type="ClockToText">Format:%H:%M:%S</convert>
-    </widget>
-    <widget source="global.CurrentTime" render="Label" position="1575,43" size="300,32" font="Regular; 28" halign="right" foregroundColor="foreground" backgroundColor="background" transparent="1" valign="top" zPosition="90">
-      <convert type="ClockToText">Format %a %d %b %Y</convert>
-    </widget>
-  </screen>
   <screen name="LocationBoxNew" flags="wfNoBorder" position="0,0" backgroundColor="transparent">
     <panel name="titletemp" />
     <panel name="ScreenTemplateAllColorButtons_menu" />
