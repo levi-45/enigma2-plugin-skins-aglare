@@ -22,9 +22,11 @@ from time import gmtime
 import json
 import os
 import re
+
 import socket
 import sys
 import NavigationInstance
+from re import search, sub, I, S, escape
 
 global my_cur_skin, path_folder
 
@@ -38,6 +40,8 @@ if sys.version_info[0] >= 3:
     from urllib.error import HTTPError, URLError
     import html
     html_parser = html
+
+
 else:
     from urllib import quote_plus
     from urllib2 import urlopen
@@ -177,8 +181,7 @@ def intCheck():
         return False
     except socket.timeout:
         return False
-    else:
-        return True
+    return True
 
 
 def remove_accents(string):
@@ -211,7 +214,7 @@ def str_encode(text, encoding="utf8"):
 
 def cutName(eventName=""):
     if eventName:
-        eventName = eventName.replace('"', '').replace('Х/Ф', '').replace('М/Ф', '').replace('Х/ф', '').replace('.', '').replace(' | ', '')
+        eventName = eventName.replace('"', '').replace('.', '').replace(' | ', '')  # .replace('Х/Ф', '').replace('М/Ф', '').replace('Х/ф', '')
         eventName = eventName.replace('(18+)', '').replace('18+', '').replace('(16+)', '').replace('16+', '').replace('(12+)', '')
         eventName = eventName.replace('12+', '').replace('(7+)', '').replace('7+', '').replace('(6+)', '').replace('6+', '')
         eventName = eventName.replace('(0+)', '').replace('0+', '').replace('+', '')
@@ -239,7 +242,129 @@ def dataenc(data):
     return data
 
 
+def sanitize_filename(filename):
+    # Replace spaces with underscores and remove invalid characters (like ':')
+    sanitized = re.sub(r'[^\w\s-]', '', filename)  # Remove invalid characters
+    # sanitized = sanitized.replace(' ', '_')      # Replace spaces with underscores
+    # sanitized = sanitized.replace('-', '_')      # Replace dashes with underscores
+    return sanitized.strip()
+
+
 def convtext(text=''):
+    text = text.lower()
+    print('text lower init=', text)
+
+    text = text.replace("\xe2\x80\x93", "").replace('\xc2\x86', '').replace('\xc2\x87', '')  # replace special
+    text = text.replace('1^ visione rai', '').replace('1^ visione', ''.replace(' - prima tv', '')).replace(' - primatv', '')
+    text = text.replace('prima visione', '').replace('1^tv', '').replace('1^ tv', '')
+    text = text.replace('((', '(').replace('))', ')')
+    # Inglese
+    text = text.replace('first screening', '').replace('premiere:', '').replace('live:', '').replace('new:', '')
+    # Francese
+    text = text.replace('première diffusion', '').replace('nouveau:', '').replace('en direct:', '')
+    # Spagnolo
+    text = text.replace('estreno:', '').replace('nueva emisión:', '').replace('en vivo:', '')
+
+    if 'bruno barbieri' in text:
+        text = text.replace('bruno barbieri', 'brunobarbierix')
+    if "anni '60" in text:
+        text = "anni 60"
+    if 'tg regione' in text:
+        text = 'tg3'
+    if 'studio aperto' in text:
+        text = 'studio aperto'
+    if 'josephine ange gardien' in text:
+        text = 'josephine ange gardien'
+    if 'elementary' in text:
+        text = 'elementary'
+    if 'squadra speciale cobra 11' in text:
+        text = 'squadra speciale cobra 11'
+    if 'criminal minds' in text:
+        text = 'criminal minds'
+    if 'i delitti del barlume' in text:
+        text = 'i delitti del barlume'
+    if 'senza traccia' in text:
+        text = 'senza traccia'
+    if 'hudson e rex' in text:
+        text = 'hudson e rex'
+    if 'ben-hur' in text:
+        text = 'ben-hur'
+    if 'la7 ' in text:
+        text = 'la7'
+    if 'skytg24' in text:
+        text = 'skytg24'
+    cutlist = ['x264', '720p', '1080p', '1080i', 'PAL', 'GERMAN', 'ENGLiSH', 'WS', 'DVDRiP', 'UNRATED', 'RETAIL', 'Web-DL', 'DL', 'LD', 'MiC', 'MD', 'DVDR', 'BDRiP', 'BLURAY', 'DTS', 'UNCUT', 'ANiME',
+               'AC3MD', 'AC3', 'AC3D', 'TS', 'DVDSCR', 'COMPLETE', 'INTERNAL', 'DTSD', 'XViD', 'DIVX', 'DUBBED', 'LINE.DUBBED', 'DD51', 'DVDR9', 'DVDR5', 'h264', 'AVC',
+               'WEBHDTVRiP', 'WEBHDRiP', 'WEBRiP', 'WEBHDTV', 'WebHD', 'HDTVRiP', 'HDRiP', 'HDTV', 'ITUNESHD', 'REPACK', 'SYNC']
+    text = text.replace('.wmv', '').replace('.flv', '').replace('.ts', '').replace('.m2ts', '').replace('.mkv', '').replace('.avi', '').replace('.mpeg', '').replace('.mpg', '').replace('.iso', '').replace('.mp4', '')
+
+    for word in cutlist:
+        text = sub(r'(\_|\-|\.|\+)' + escape(word.lower()) + r'(\_|\-|\.|\+)', '+', text, flags=I)
+    text = text.replace('.', ' ').replace('-', ' ').replace('_', ' ').replace('+', '').replace(" Director's Cut", "").replace(" director's cut", "").replace("[Uncut]", "").replace("Uncut", "")
+
+    text_split = text.split()
+    if text_split and text_split[0].lower() in ("new:", "live:"):
+        text_split.pop(0)  # remove annoying prefixes
+    text = " ".join(text_split)
+
+    if search(r'[Ss][0-9]+[Ee][0-9]+', text):
+        text = sub(r'[Ss][0-9]+[Ee][0-9]+.*[a-zA-Z0-9_]+', '', text, flags=S | I)
+    text = sub(r'\(.*\)', '', text).rstrip()  # remove episode number from series, like "series name (234)"
+
+    # # List of bad strings to remove
+    # bad_strings = [
+        # "ae|", "al|", "ar|", "at|", "ba|", "be|", "bg|", "br|", "cg|", "ch|", "cz|", "da|", "de|", "dk|",
+        # "ee|", "en|", "es|", "eu|", "ex-yu|", "fi|", "fr|", "gr|", "hr|", "hu|", "in|", "ir|", "it|", "lt|",
+        # "mk|", "mx|", "nl|", "no|", "pl|", "pt|", "ro|", "rs|", "ru|", "se|", "si|", "sk|", "sp|", "tr|",
+        # "uk|", "us|", "yu|",
+        # "1080p-dual-lat-cine-calidad.com", "1080p-dual-lat-cine-calidad.com-1",
+        # "1080p-dual-lat-cinecalidad.mx", "1080p-lat-cine-calidad.com", "1080p-lat-cine-calidad.com-1",
+        # "1080p-lat-cinecalidad.mx", "1080p.dual.lat.cine-calidad.com", "3d", "'", "#", "[]",  # "/", "(", ")", "-",
+        # "4k", "aac", "blueray", "ex-yu:", "fhd", "hd", "hdrip", "hindi", "imdb", "multi:", "multi-audio",
+        # "multi-sub", "multi-subs", "multisub", "ozlem", "sd", "top250", "u-", "uhd", "vod", "x264"
+    # ]
+
+    # # Remove numbers from 1900 to 2030
+    # bad_strings.extend(map(str, range(1900, 2030)))
+    # # Construct a regex pattern to match any of the bad strings
+    # bad_strings_pattern = re.compile('|'.join(map(re.escape, bad_strings)))
+    # # Remove bad strings using regex pattern
+    # text = bad_strings_pattern.sub('', text)
+    # # List of bad suffixes to remove
+    # bad_suffix = [
+        # " al", " ar", " ba", " da", " de", " en", " es", " eu", " ex-yu", " fi", " fr", " gr", " hr", " mk",
+        # " nl", " no", " pl", " pt", " ro", " rs", " ru", " si", " swe", " sw", " tr", " uk", " yu"
+    # ]
+    # # Construct a regex pattern to match any of the bad suffixes at the end of the string
+    # bad_suffix_pattern = re.compile(r'(' + '|'.join(map(re.escape, bad_suffix)) + r')$')
+    # # Remove bad suffixes using regex pattern
+    # text = bad_suffix_pattern.sub('', text)
+    # # Replace ".", "_", "'" with " "
+    # text = re.sub(r'[._\']', ' ', text)
+
+    text = remove_accents(text)
+    print('remove_accents text: ', text)
+
+    text = text + 'FIN'
+    text = re.sub(r'(odc.\s\d+)+.*?FIN', '', text)
+    text = re.sub(r'(odc.\d+)+.*?FIN', '', text)
+    text = re.sub(r'(\d+)+.*?FIN', '', text)
+    text = text.partition("(")[0] + 'FIN'
+    text = re.sub(r"\\s\d+", "", text)
+    text = re.sub('FIN', '', text)
+
+    text = sanitize_filename(text)
+
+    # forced
+    text = text.replace('XXXXXX', '60')
+    text = text.replace('brunobarbierix', 'bruno barbieri - 4 hotel')
+
+    text = quote(text, safe="")
+    print('text final: ', text)
+    return unquote(text).capitalize()
+
+
+def convtextPAUSED(text=''):
     try:
         if text is None:
             print('return None original text: ', type(text))
@@ -250,6 +375,9 @@ def convtext(text=''):
             print('original text: ', text)
             text = text.lower()
             print('lowercased text: ', text)
+
+            text = text.partition("-")[0]
+
             text = remove_accents(text)
             print('remove_accents text: ', text)
             # #
@@ -258,10 +386,16 @@ def convtext(text=''):
             # #
             if text.endswith("the"):
                 text = "the " + text[:-4]
+            # text = re.sub(r'^\w{4}:', '', text)
+            text_split = text.split()
+            if text_split and text_split[0].lower() in ("new:", "live:"):
+                text_split.pop(0)  # remove annoying prefixes
+            text = " ".join(text_split)
+
             text = text.replace("\xe2\x80\x93", "").replace('\xc2\x86', '').replace('\xc2\x87', '')  # replace special
-            text = text.replace('1^ visione rai', '').replace('1^ visione', '').replace('primatv', '').replace('1^tv', '')
-            text = text.replace('prima visione', '').replace('1^ tv', '').replace('((', '(').replace('))', ')')
-            text = text.replace('live:', '').replace(' - prima tv', '')
+            text = text.replace('1^ visione rai', '').replace('1^ visione', ''.replace(' - prima tv', '')).replace('primatv', '')
+            text = text.replace('prima visione', '').replace('1^tv', '').replace('1^ tv', '')
+            text = text.replace('live:', '').replace('new:', '').replace('((', '(').replace('))', ')')
             if 'giochi olimpici parigi' in text:
                 text = 'olimpiadi di parigi'
             if 'bruno barbieri' in text:
@@ -288,7 +422,7 @@ def convtext(text=''):
                 text = 'hudson e rex'
             if 'ben-hur' in text:
                 text = 'ben-hur'
-            if 'la7' in text:
+            if 'la7 ' in text:
                 text = 'la7'
             if 'skytg24' in text:
                 text = 'skytg24'
@@ -321,7 +455,7 @@ def convtext(text=''):
                 "uk|", "us|", "yu|",
                 "1080p", "1080p-dual-lat-cine-calidad.com", "1080p-dual-lat-cine-calidad.com-1",
                 "1080p-dual-lat-cinecalidad.mx", "1080p-lat-cine-calidad.com", "1080p-lat-cine-calidad.com-1",
-                "1080p-lat-cinecalidad.mx", "1080p.dual.lat.cine-calidad.com", "3d", "'", "#", "(", ")", "-", "[]", "/",
+                "1080p-lat-cinecalidad.mx", "1080p.dual.lat.cine-calidad.com", "3d", "'", "#", "[]",  # "/", "(", ")", "-",
                 "4k", "720p", "aac", "blueray", "ex-yu:", "fhd", "hd", "hdrip", "hindi", "imdb", "multi:", "multi-audio",
                 "multi-sub", "multi-subs", "multisub", "ozlem", "sd", "top250", "u-", "uhd", "vod", "x264"
             ]
@@ -361,8 +495,9 @@ def convtext(text=''):
             text = text.partition(" -")[0]
             text = re.sub(' - +.+?FIN', '', text)  # all episodes and series ????
             text = re.sub('FIN', '', text)
-            text = re.sub(r'^\|[\w\-\|]*\|', '', text)
-            text = re.sub(r"[-,?!/\.\":]", '', text)  # replace (- or , or ! or / or . or " or :) by space
+            text = re.sub(r"[\<\>\:\"\/\\\|\?\*!]", "_", str(text))
+            # text = re.sub(r'^\|[\w\-\|]*\|', '', text)
+            text = re.sub(r"[-,?!+/\.\":]", '', text)  # replace (- or , or ! or / or . or " or :) by space
             # recoded  end
             text = text.strip(' -')
             # forced

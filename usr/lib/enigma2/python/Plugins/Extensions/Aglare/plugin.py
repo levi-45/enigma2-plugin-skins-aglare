@@ -44,7 +44,7 @@ else:
     from urllib2 import Request
 
 
-version = '4.5'
+version = '4.6'
 my_cur_skin = False
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 OAWeather = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('OAWeather'))
@@ -169,13 +169,12 @@ class AglareSetup(ConfigListScreen, Screen):
         self.skinFile = '/usr/share/enigma2/Aglare-FHD-PLI/skin.xml'
         self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
         self['Preview'] = Pixmap()
-        self.setup_title = ('Aglare-FHD-PLI')
         self.onChangedEntry = []
         list = []
 
         ConfigListScreen.__init__(self, list, session=self.session, on_change=self.changedEntry)
         self['actions'] = ActionMap(['OkCancelActions',
-                                     'DirectionActions',
+                                     # 'DirectionActions',
                                      'InputBoxActions',
                                      'HotkeyActions'
                                      # 'SetupActions'
@@ -205,12 +204,7 @@ class AglareSetup(ConfigListScreen, Screen):
             self.PicLoad.PictureData.get().append(self.DecodePicture)
         except:
             self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
-        # self.onLayoutFinish.append(self.UpdateComponents)
-        self.onLayoutFinish.append(self.UpdatePicture)
-        self.onLayoutFinish.append(self.__layoutFinished)
-
-    def __layoutFinished(self):
-        self.setTitle(self.setup_title)
+        self.onLayoutFinish.append(self.UpdateComponents)
 
     def keyRun(self):
         sel = self["config"].getCurrent()[1]
@@ -346,38 +340,35 @@ class AglareSetup(ConfigListScreen, Screen):
             self.session.open(File_Commander, user_log)
 
     def GetPicturePath(self):
-        returnValue = self['config'].getCurrent()[1].value
-        path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue + '.jpg'
-        PicturePath = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.jpg'
-        # try:
-        if fileExists(path):
-            return path
-        else:
-            return PicturePath
-        print('PicturePath=', PicturePath)
-        # except Exception as e:
-            # print('error GetPicturePath:', e)
-            # return PicturePath
+        try:
+            returnValue = self['config'].getCurrent()[1].value
+            path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue + '.jpg'
+            if fileExists(path):
+                return path
+            else:
+                return '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.jpg'
+        except Exception as e:
+            print('error GetPicturePath:', e)
+            return '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.jpg'
 
     def UpdatePicture(self):
-        # self.PicLoad.PictureData.get().append(self.DecodePicture)
+        self.PicLoad.PictureData.get().append(self.DecodePicture)
         self.onLayoutFinish.append(self.ShowPicture)
 
     def ShowPicture(self, data=None):
         if self["Preview"].instance:
-            size = self['Preview'].instance.size()
-            self.PicLoad.setPara([size.width(), size.height(), self.Scale[0], self.Scale[1], 0, 1, '#00000000'])
-            pixmapx = self.GetPicturePath()
-            if self.PicLoad.startDecode(pixmapx):
+            width = 498
+            height = 280
+            self.PicLoad.setPara([width, height, self.Scale[0], self.Scale[1], 0, 1, "ff000000"])
+            if self.PicLoad.startDecode(self.GetPicturePath()):
                 self.PicLoad = ePicLoad()
                 try:
                     self.PicLoad.PictureData.get().append(self.DecodePicture)
                 except:
                     self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
+            return
 
     def DecodePicture(self, PicInfo=None):
-        if PicInfo is None:
-            PicInfo = '/usr/share/enigma2/xDreamy/screens/default.png'
         ptr = self.PicLoad.getData()
         if ptr is not None:
             self["Preview"].instance.setPixmap(ptr)
@@ -452,192 +443,58 @@ class AglareSetup(ConfigListScreen, Screen):
         return SetupSummary
 
     def keySave(self):
-
-        def load_xml_to_skin_lines(file_path):
-            try:
-                with open(file_path, 'r') as file:
-                    return file.readlines()
-            except FileNotFoundError:
-                return []
         if not fileExists(self.skinFile + self.version):
             for x in self['config'].list:
                 x[1].cancel()
             self.close()
             return
-
+            
         for x in self['config'].list:
             if len(x) > 1:  # Check if x has at least two elements
                 x[1].save()
-            config.plugins.Aglare.save()
-            configfile.save()
+        # try:
 
-        try:
-            skin_lines = []
-            xml_files = [
-                'head-' + config.plugins.Aglare.colorSelector.value,
-                'font-' + config.plugins.Aglare.FontStyle.value,
-                'infobar-' + config.plugins.Aglare.InfobarStyle.value,
-                'infobar-' + config.plugins.Aglare.InfobarPosterx.value,
-                'infobar-' + config.plugins.Aglare.InfobarXtraevent.value,
-                'infobar-' + config.plugins.Aglare.InfobarDate.value,
-                'infobar-' + config.plugins.Aglare.InfobarWeather.value,
-                'secondinfobar-' + config.plugins.Aglare.SecondInfobarStyle.value,
-                'secondinfobar-' + config.plugins.Aglare.SecondInfobarPosterx.value,
-                'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value,
-                'channellist-' + config.plugins.Aglare.ChannSelector.value,
-                'eventview-' + config.plugins.Aglare.EventView.value,
-                'vol-' + config.plugins.Aglare.VolumeBar.value
-            ]
-
-            for filename in xml_files:
-                skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + filename + '.xml'))
-
-            base_file = 'base1.xml' if config.plugins.Aglare.skinSelector.value == 'base1' else 'base.xml'
-            skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + base_file))
-
-            with open(self.skinFile, 'w') as xFile:
-                xFile.writelines(skin_lines)
-
-        except Exception as e:
-            self.session.open(MessageBox, _('Error by processing the skin file: {}').format(str(e)), MessageBox.TYPE_ERROR)
-
-        restartbox = self.session.openWithCallback(
-            self.restartGUI,
-            MessageBox,
-            _('GUI needs a restart to apply a new skin.\nDo you want to Restart the GUI now?'),
-            MessageBox.TYPE_YESNO
-        )
-        restartbox.setTitle(_('Restart GUI now?'))
-    '''
-    def keySave(self):
-        if not fileExists(self.skinFile + self.version):
-            for x in self['config'].list:
-                x[1].cancel()
-            self.close()
-            return
-
-        for x in self['config'].list:
-            if len(x) > 1:  # Check if x has at least two elements
-                x[1].save()
-
+        # except IndexError:
+            # print("Errore x non ha abbastanza elementi.")
+            
         config.plugins.Aglare.save()
         configfile.save()
 
-        try:
-            skin_lines = []
+        def append_skin_file(file_path, skin_lines):
+            try:
+                with open(file_path, 'r') as skFile:
+                    skin_lines.extend(skFile.readlines())
+            except FileNotFoundError:
+                print("File not found:", file_path)
 
-            head_file = self.previewFiles + 'head-' + config.plugins.Aglare.colorSelector.value + '.xml'
-            skFile = open(head_file, 'r')
-            head_lines = skFile.readlines()
-            skFile.close()
-            for x in head_lines:
-                skin_lines.append(x)
+        skin_lines = []
 
-            font_file = self.previewFiles + 'font-' + config.plugins.Aglare.FontStyle.value + '.xml'
-            skFile = open(font_file, 'r')
-            font_lines = skFile.readlines()
-            skFile.close()
-            for x in font_lines:
-                skin_lines.append(x)
+        file_paths = [
+            self.previewFiles + 'head-' + config.plugins.Aglare.colorSelector.value + '.xml',
+            self.previewFiles + 'font-' + config.plugins.Aglare.FontStyle.value + '.xml',
+            self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarStyle.value + '.xml',
+            self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarPosterx.value + '.xml',
+            self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarXtraevent.value + '.xml',
+            self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarDate.value + '.xml',
+            self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarWeather.value + '.xml',
+            self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarStyle.value + '.xml',
+            self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarPosterx.value + '.xml',
+            self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value + '.xml',
+            self.previewFiles + 'channellist-' + config.plugins.Aglare.ChannSelector.value + '.xml',
+            self.previewFiles + 'eventview-' + config.plugins.Aglare.EventView.value + '.xml',
+            self.previewFiles + 'vol-' + config.plugins.Aglare.VolumeBar.value + '.xml'
+        ]
 
-            skn_file = self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarStyle.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarPosterx.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarXtraevent.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarDate.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarWeather.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarStyle.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarPosterx.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'channellist-' + config.plugins.Aglare.ChannSelector.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'eventview-' + config.plugins.Aglare.EventView.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            skn_file = self.previewFiles + 'vol-' + config.plugins.Aglare.VolumeBar.value + '.xml'
-            skFile = open(skn_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            base_file = self.previewFiles + 'base.xml'
-            if config.plugins.Aglare.skinSelector.value == 'base1':
-                base_file = self.previewFiles + 'base1.xml'
-            if config.plugins.Aglare.skinSelector.value == 'base':
-                base_file = self.previewFiles + 'base.xml'
-
-            skFile = open(base_file, 'r')
-            file_lines = skFile.readlines()
-            skFile.close()
-            for x in file_lines:
-                skin_lines.append(x)
-
-            xFile = open(self.skinFile, 'w')
-            for xx in skin_lines:
-                xFile.writelines(xx)
-            xFile.close()
-        except:
-            self.session.open(MessageBox, _('Error by processing the skin file !!!'), MessageBox.TYPE_ERROR)
+        base_file = 'base.xml'
+        if config.plugins.Aglare.skinSelector.value == 'base1':
+            base_file = 'base1.xml'
+        file_paths.append(self.previewFiles + base_file)
+        for path in file_paths:
+            append_skin_file(path, skin_lines)
+        with open(self.skinFile, 'w') as xFile:
+            xFile.writelines(skin_lines)
         restartbox = self.session.openWithCallback(self.restartGUI, MessageBox, _('GUI needs a restart to apply a new skin.\nDo you want to Restart the GUI now?'), MessageBox.TYPE_YESNO)
         restartbox.setTitle(_('Restart GUI now?'))
-    '''
 
     def restartGUI(self, answer):
         if answer is True:
@@ -649,7 +506,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglare.txt')
+            req = Request('https://raw.githubusercontent.com/levi-45/skins/main/aglarepli/aglarepliversion.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')
@@ -657,6 +514,7 @@ class AglareSetup(ConfigListScreen, Screen):
             with open(destr, 'w') as f:
                 f.write(str(fp))  # .decode("utf-8"))
                 f.seek(0)
+                f.close()
             if os.path.exists(destr):
                 with open(destr, 'r') as cc:
                     s1 = cc.readline()  # .decode("utf-8")
