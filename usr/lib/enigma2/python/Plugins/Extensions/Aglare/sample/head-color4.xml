@@ -244,4 +244,5 @@
     </borderset>
   </windowstyle>
   <include filename="skin_templates.xml" />
+  <include filename="skin_sf.xml" />
   

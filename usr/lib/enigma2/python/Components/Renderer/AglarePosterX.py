@@ -34,7 +34,6 @@ from Components.Sources.EventInfo import EventInfo
 from Components.Sources.ServiceEvent import ServiceEvent
 from Components.config import config
 from ServiceReference import ServiceReference
-from six import text_type
 from enigma import (
     ePixmap,
     loadJPG,
@@ -43,38 +42,25 @@ from enigma import (
 )
 import NavigationInstance
 import os
-import re
-import shutil
 import socket
 import sys
 import time
-
-from re import search, sub, I, S, escape
+import traceback
+import datetime
+from .Converlibr import convtext
 
 PY3 = False
 if sys.version_info[0] >= 3:
     PY3 = True
     import queue
-    import html
-    html_parser = html
     from _thread import start_new_thread
     from urllib.error import HTTPError, URLError
     from urllib.request import urlopen
-    from urllib.parse import quote_plus
 else:
     import Queue
     from thread import start_new_thread
     from urllib2 import HTTPError, URLError
     from urllib2 import urlopen
-    from urllib import quote_plus
-    from HTMLParser import HTMLParser
-    html_parser = HTMLParser()
-
-
-try:
-    from urllib import unquote, quote
-except ImportError:
-    from urllib.parse import unquote, quote
 
 
 epgcache = eEPGCache.getInstance()
@@ -84,28 +70,12 @@ else:
     pdb = Queue.LifoQueue()
 
 
-def isMountReadonly(mnt):
-    mount_point = ''
-    with open('/proc/mounts') as f:
+def isMountedInRW(mount_point):
+    with open("/proc/mounts", "r") as f:
         for line in f:
-            line = line.split(',')[0]
-            line = line.split()
-            print('line ', line)
-            try:
-                device, mount_point, filesystem, flags = line
-            except Exception as err:
-                print("Error: %s" % err)
-            if mount_point == mnt:
-                return 'ro' in flags
-    return "mount: '%s' doesn't exist" % mnt
-
-
-def isMountedInRW(path):
-    testfile = path + '/tmp-rw-test'
-    os.system('touch ' + testfile)
-    if os.path.exists(testfile):
-        os.system('rm -f ' + testfile)
-        return True
+            parts = line.split()
+            if len(parts) > 1 and parts[1] == mount_point:
+                return True
     return False
 
 
@@ -157,80 +127,40 @@ def SearchBouquetTerrestrial():
                     break
 
 
-if SearchBouquetTerrestrial():
-    autobouquet_file = SearchBouquetTerrestrial()
-else:
-    autobouquet_file = '/etc/enigma2/userbouquet.favourites.tv'
-# print('autobouquet_file = ', autobouquet_file)
-autobouquet_count = 70
-# Short script for Automatic poster generation on your preferred bouquet
-if not os.path.exists(autobouquet_file):
-    autobouquet_file = None
-    autobouquet_count = 0
-else:
-    with open(autobouquet_file, 'r') as f:
-        lines = f.readlines()
-    if autobouquet_count > len(lines):
-        autobouquet_count = len(lines)
-    for i in range(autobouquet_count):
-        if '#SERVICE' in lines[i]:
-            line = lines[i][9:].strip().split(':')
-            if len(line) == 11:
-                value = ':'.join((line[3], line[4], line[5], line[6]))
-                if value != '0:0:0:0':
-                    service = ':'.join((line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7], line[8], line[9], line[10]))
-                    apdb[i] = service
+autobouquet_file = None
 
 
-try:
-    folder_size = sum([sum(map(lambda fname: os.path.getsize(os.path.join(path_folder, fname)), files)) for folder_p, folders, files in os.walk(path_folder)])
-    agposter = "%0.f" % (folder_size / (1024 * 1024.0))
-    if agposter >= "5":
-        shutil.rmtree(path_folder)
-except:
-    pass
+def process_autobouquet():
+    global autobouquet_file
+    autobouquet_file = SearchBouquetTerrestrial() or '/etc/enigma2/userbouquet.favourites.tv'
+    autobouquet_count = 70
+    apdb = {}
 
+    if not os.path.exists(autobouquet_file):
+        print("File non trovato:", autobouquet_file)
+        return {}
 
-def OnclearMem():
     try:
-        os.system('sync')
-        os.system('echo 1 > /proc/sys/vm/drop_caches')
-        os.system('echo 2 > /proc/sys/vm/drop_caches')
-        os.system('echo 3 > /proc/sys/vm/drop_caches')
-    except:
-        pass
+        with open(autobouquet_file, 'r') as f:
+            lines = f.readlines()
+    except (IOError, OSError) as e:
+        print("Errore nella lettura del file:", e)
+        return {}
+
+    autobouquet_count = min(autobouquet_count, len(lines))
+
+    for i, line in enumerate(lines[:autobouquet_count]):
+        if line.startswith('#SERVICE'):
+            parts = line[9:].strip().split(':')
+            if len(parts) == 11 and ':'.join(parts[3:7]) != '0:0:0:0':
+                apdb[i] = ':'.join(parts)
+
+    print("Trovati", len(apdb), "servizi validi.")
+    return apdb
 
 
-def quoteEventName(eventName):
-    try:
-        text = eventName.decode('utf8').replace(u'\x86', u'').replace(u'\x87', u'').encode('utf8')
-    except:
-        text = eventName
-    return quote_plus(text, safe="+")
-
-
-REGEX = re.compile(
-    r'[\(\[].*?[\)\]]|'                    # Parentesi tonde o quadre
-    r':?\s?odc\.\d+|'                      # odc. con o senza numero prima
-    r'\d+\s?:?\s?odc\.\d+|'                # numero con odc.
-    r'[:!]|'                               # due punti o punto esclamativo
-    r'\s-\s.*|'                            # trattino con testo successivo
-    r',|'                                  # virgola
-    r'/.*|'                                # tutto dopo uno slash
-    r'\|\s?\d+\+|'                         # | seguito da numero e +
-    r'\d+\+|'                              # numero seguito da +
-    r'\s\*\d{4}\Z|'                        # * seguito da un anno a 4 cifre
-    r'[\(\[\|].*?[\)\]\|]|'                # Parentesi tonde, quadre o pipe
-    r'(?:\"[\.|\,]?\s.*|\"|'               # Testo tra virgolette
-    r'\.\s.+)|'                            # Punto seguito da testo
-    r'Премьера\.\s|'                       # Specifico per il russo
-    r'[хмтдХМТД]/[фс]\s|'                  # Pattern per il russo con /ф o /с
-    r'\s[сС](?:езон|ерия|-н|-я)\s.*|'      # Stagione o episodio in russo
-    r'\s\d{1,3}\s[чсЧС]\.?\s.*|'           # numero di parte/episodio in russo
-    r'\.\s\d{1,3}\s[чсЧС]\.?\s.*|'         # numero di parte/episodio in russo con punto
-    r'\s[чсЧС]\.?\s\d{1,3}.*|'             # Parte/Episodio in russo
-    r'\d{1,3}-(?:я|й)\s?с-н.*',            # Finale con numero e suffisso russo
-    re.DOTALL)
+# Esecuzione della funzione
+apdb = process_autobouquet()
 
 
 def intCheck():
@@ -246,335 +176,6 @@ def intCheck():
     return True
 
 
-def remove_accents(string):
-    if not isinstance(string, text_type):
-        string = text_type(string, 'utf-8')
-    string = re.sub(u"[àáâãäå]", 'a', string)
-    string = re.sub(u"[èéêë]", 'e', string)
-    string = re.sub(u"[ìíîï]", 'i', string)
-    string = re.sub(u"[òóôõö]", 'o', string)
-    string = re.sub(u"[ùúûü]", 'u', string)
-    string = re.sub(u"[ýÿ]", 'y', string)
-    return string
-
-
-def unicodify(s, encoding='utf-8', norm=None):
-    if not isinstance(s, text_type):
-        s = text_type(s, encoding)
-    if norm:
-        from unicodedata import normalize
-        s = normalize(norm, s)
-    return s
-
-
-def str_encode(text, encoding="utf8"):
-    if not PY3:
-        if isinstance(text, text_type):
-            return text.encode(encoding)
-    return text
-
-
-def cutName(eventName=""):
-    if eventName:
-        eventName = eventName.replace('"', '').replace('.', '').replace(' | ', '')  # .replace('Х/Ф', '').replace('М/Ф', '').replace('Х/ф', '')
-        eventName = eventName.replace('(18+)', '').replace('18+', '').replace('(16+)', '').replace('16+', '').replace('(12+)', '')
-        eventName = eventName.replace('12+', '').replace('(7+)', '').replace('7+', '').replace('(6+)', '').replace('6+', '')
-        eventName = eventName.replace('(0+)', '').replace('0+', '').replace('+', '')
-        eventName = eventName.replace('episode', '')
-        eventName = eventName.replace('مسلسل', '')
-        eventName = eventName.replace('فيلم وثائقى', '')
-        eventName = eventName.replace('حفل', '')
-        return eventName
-    return ""
-
-
-def getCleanTitle(eventitle=""):
-    # save_name = re.sub('\\(\d+\)$', '', eventitle)
-    # save_name = re.sub('\\(\d+\/\d+\)$', '', save_name)  # remove episode-number " (xx/xx)" at the end
-    # # save_name = re.sub('\ |\?|\.|\,|\!|\/|\;|\:|\@|\&|\'|\-|\"|\%|\(|\)|\[|\]\#|\+', '', save_name)
-    save_name = eventitle.replace(' ^`^s', '').replace(' ^`^y', '')
-    return save_name
-
-
-def dataenc(data):
-    if PY3:
-        data = data.decode("utf-8")
-    else:
-        data = data.encode("utf-8")
-    return data
-
-
-def sanitize_filename(filename):
-    # Replace spaces with underscores and remove invalid characters (like ':')
-    sanitized = re.sub(r'[^\w\s-]', '', filename)  # Remove invalid characters
-    # sanitized = sanitized.replace(' ', '_')      # Replace spaces with underscores
-    # sanitized = sanitized.replace('-', '_')      # Replace dashes with underscores
-    return sanitized.strip()
-
-
-def convtext(text=''):
-    text = text.lower()
-    print('text lower init=', text)
-
-    text = text.replace("\xe2\x80\x93", "").replace('\xc2\x86', '').replace('\xc2\x87', '')  # replace special
-    text = text.replace('1^ visione rai', '').replace('1^ visione', ''.replace(' - prima tv', '')).replace(' - primatv', '')
-    text = text.replace('prima visione', '').replace('1^tv', '').replace('1^ tv', '')
-    text = text.replace('((', '(').replace('))', ')')
-    # Inglese
-    text = text.replace('first screening', '').replace('premiere:', '').replace('live:', '').replace('new:', '')
-    # Francese
-    text = text.replace('première diffusion', '').replace('nouveau:', '').replace('en direct:', '')
-    # Spagnolo
-    text = text.replace('estreno:', '').replace('nueva emisión:', '').replace('en vivo:', '')
-
-    if 'bruno barbieri' in text:
-        text = text.replace('bruno barbieri', 'brunobarbierix')
-    if "anni '60" in text:
-        text = "anni 60"
-    if 'tg regione' in text:
-        text = 'tg3'
-    if 'studio aperto' in text:
-        text = 'studio aperto'
-    if 'josephine ange gardien' in text:
-        text = 'josephine ange gardien'
-    if 'elementary' in text:
-        text = 'elementary'
-    if 'squadra speciale cobra 11' in text:
-        text = 'squadra speciale cobra 11'
-    if 'criminal minds' in text:
-        text = 'criminal minds'
-    if 'i delitti del barlume' in text:
-        text = 'i delitti del barlume'
-    if 'senza traccia' in text:
-        text = 'senza traccia'
-    if 'hudson e rex' in text:
-        text = 'hudson e rex'
-    if 'ben-hur' in text:
-        text = 'ben-hur'
-    if 'la7 ' in text:
-        text = 'la7'
-    if 'skytg24' in text:
-        text = 'skytg24'
-
-    cutlist = ['x264', '720p', '1080p', '1080i', 'PAL', 'GERMAN', 'ENGLiSH', 'WS', 'DVDRiP', 'UNRATED', 'RETAIL', 'Web-DL', 'DL', 'LD', 'MiC', 'MD', 'DVDR', 'BDRiP', 'BLURAY', 'DTS', 'UNCUT', 'ANiME',
-               'AC3MD', 'AC3', 'AC3D', 'TS', 'DVDSCR', 'COMPLETE', 'INTERNAL', 'DTSD', 'XViD', 'DIVX', 'DUBBED', 'LINE.DUBBED', 'DD51', 'DVDR9', 'DVDR5', 'h264', 'AVC',
-               'WEBHDTVRiP', 'WEBHDRiP', 'WEBRiP', 'WEBHDTV', 'WebHD', 'HDTVRiP', 'HDRiP', 'HDTV', 'ITUNESHD', 'REPACK', 'SYNC']
-    text = text.replace('.wmv', '').replace('.flv', '').replace('.ts', '').replace('.m2ts', '').replace('.mkv', '').replace('.avi', '').replace('.mpeg', '').replace('.mpg', '').replace('.iso', '').replace('.mp4', '')
-    for word in cutlist:
-        text = sub(r'(\_|\-|\.|\+)' + escape(word.lower()) + r'(\_|\-|\.|\+)', '+', text, flags=I)
-    text = text.replace('.', ' ').replace('-', ' ').replace('_', ' ').replace('+', '').replace(" Director's Cut", "").replace(" director's cut", "").replace("[Uncut]", "").replace("Uncut", "")
-    text_split = text.split()
-    if text_split and text_split[0].lower() in ("new:", "live:"):
-        text_split.pop(0)  # remove annoying prefixes
-    text = " ".join(text_split)
-
-    if search(r'[Ss][0-9]+[Ee][0-9]+', text):
-        text = sub(r'[Ss][0-9]+[Ee][0-9]+.*[a-zA-Z0-9_]+', '', text, flags=S | I)
-    text = sub(r'\(.*\)', '', text).rstrip()  # remove episode number from series, like "series name (234)"
-
-    # # List of bad strings to remove
-    # bad_strings = [
-        # "ae|", "al|", "ar|", "at|", "ba|", "be|", "bg|", "br|", "cg|", "ch|", "cz|", "da|", "de|", "dk|",
-        # "ee|", "en|", "es|", "eu|", "ex-yu|", "fi|", "fr|", "gr|", "hr|", "hu|", "in|", "ir|", "it|", "lt|",
-        # "mk|", "mx|", "nl|", "no|", "pl|", "pt|", "ro|", "rs|", "ru|", "se|", "si|", "sk|", "sp|", "tr|",
-        # "uk|", "us|", "yu|",
-        # "1080p-dual-lat-cine-calidad.com", "1080p-dual-lat-cine-calidad.com-1",
-        # "1080p-dual-lat-cinecalidad.mx", "1080p-lat-cine-calidad.com", "1080p-lat-cine-calidad.com-1",
-        # "1080p-lat-cinecalidad.mx", "1080p.dual.lat.cine-calidad.com", "3d", "'", "#", "[]",  # "/", "(", ")", "-",
-        # "4k", "aac", "blueray", "ex-yu:", "fhd", "hd", "hdrip", "hindi", "imdb", "multi:", "multi-audio",
-        # "multi-sub", "multi-subs", "multisub", "ozlem", "sd", "top250", "u-", "uhd", "vod", "x264"
-    # ]
-
-    # # Remove numbers from 1900 to 2030
-    # bad_strings.extend(map(str, range(1900, 2030)))
-    # # Construct a regex pattern to match any of the bad strings
-    # bad_strings_pattern = re.compile('|'.join(map(re.escape, bad_strings)))
-    # # Remove bad strings using regex pattern
-    # text = bad_strings_pattern.sub('', text)
-    # # List of bad suffixes to remove
-    # bad_suffix = [
-        # " al", " ar", " ba", " da", " de", " en", " es", " eu", " ex-yu", " fi", " fr", " gr", " hr", " mk",
-        # " nl", " no", " pl", " pt", " ro", " rs", " ru", " si", " swe", " sw", " tr", " uk", " yu"
-    # ]
-    # # Construct a regex pattern to match any of the bad suffixes at the end of the string
-    # bad_suffix_pattern = re.compile(r'(' + '|'.join(map(re.escape, bad_suffix)) + r')$')
-    # # Remove bad suffixes using regex pattern
-    # text = bad_suffix_pattern.sub('', text)
-    # # Replace ".", "_", "'" with " "
-    # text = re.sub(r'[._\']', ' ', text)
-
-    text = remove_accents(text)
-    print('remove_accents text: ', text)
-
-    text = text + 'FIN'
-    text = re.sub(r'(odc.\s\d+)+.*?FIN', '', text)
-    text = re.sub(r'(odc.\d+)+.*?FIN', '', text)
-    text = re.sub(r'(\d+)+.*?FIN', '', text)
-    text = text.partition("(")[0] + 'FIN'
-    text = re.sub(r"\\s\d+", "", text)
-    text = re.sub('FIN', '', text)
-
-    text = sanitize_filename(text)
-
-    # forced
-    text = text.replace('XXXXXX', '60')
-    text = text.replace('brunobarbierix', 'bruno barbieri - 4 hotel')
-
-    text = quote(text, safe="")
-    print('text final: ', text)
-    return unquote(text).capitalize()
-
-
-def convtextPAUSED(text=''):
-    try:
-        if text is None:
-            print('return None original text: ', type(text))
-            return  # Esci dalla funzione se text è None
-        if text == '':
-            print('text is an empty string')
-        else:
-            print('original text: ', text)
-            text = text.lower()
-            print('lowercased text: ', text)
-
-            text = text.partition("-")[0]
-
-            text = remove_accents(text)
-            print('remove_accents text: ', text)
-            # #
-            text = cutName(text)
-            text = getCleanTitle(text)
-            # #
-            if text.endswith("the"):
-                text = "the " + text[:-4]
-
-            # text = re.sub(r'^\w{4}:', '', text)
-
-            text_split = text.split()
-            if text_split and text_split[0].lower() in ("new:", "live:"):
-                text_split.pop(0)  # remove annoying prefixes
-            text = " ".join(text_split)
-
-            text = text.replace("\xe2\x80\x93", "").replace('\xc2\x86', '').replace('\xc2\x87', '')  # replace special
-            text = text.replace('1^ visione rai', '').replace('1^ visione', ''.replace(' - prima tv', '')).replace('primatv', '')
-            text = text.replace('prima visione', '').replace('1^tv', '').replace('1^ tv', '')
-            text = text.replace('live:', '').replace('new:', '').replace('((', '(').replace('))', ')')
-
-            if 'giochi olimpici parigi' in text:
-                text = 'olimpiadi di parigi'
-            if 'bruno barbieri' in text:
-                text = text.replace('bruno barbieri', 'brunobarbierix')
-            if "anni '60" in text:
-                text = "anni 60"
-            if 'tg regione' in text:
-                text = 'tg3'
-            if 'studio aperto' in text:
-                text = 'studio aperto'
-            if 'josephine ange gardien' in text:
-                text = 'josephine ange gardien'
-            if 'elementary' in text:
-                text = 'elementary'
-            if 'squadra speciale cobra 11' in text:
-                text = 'squadra speciale cobra 11'
-            if 'criminal minds' in text:
-                text = 'criminal minds'
-            if 'i delitti del barlume' in text:
-                text = 'i delitti del barlume'
-            if 'senza traccia' in text:
-                text = 'senza traccia'
-            if 'hudson e rex' in text:
-                text = 'hudson e rex'
-            if 'ben-hur' in text:
-                text = 'ben-hur'
-            if 'la7 ' in text:
-                text = 'la7'
-            if 'skytg24' in text:
-                text = 'skytg24'
-            # remove xx: at start
-            text = re.sub(r'^\w{2}:', '', text)
-            # remove xx|xx at start
-            text = re.sub(r'^\w{2}\|\w{2}\s', '', text)
-            # remove xx - at start
-            text = re.sub(r'^.{2}\+? ?- ?', '', text)
-            # remove all leading content between and including ||
-            text = re.sub(r'^\|\|.*?\|\|', '', text)
-            text = re.sub(r'^\|.*?\|', '', text)
-            # remove everything left between pipes.
-            text = re.sub(r'\|.*?\|', '', text)
-            # remove all content between and including () multiple times
-            text = re.sub(r'\(\(.*?\)\)|\(.*?\)', '', text)
-            # remove all content between and including [] multiple times
-            text = re.sub(r'\[\[.*?\]\]|\[.*?\]', '', text)
-            # remove episode number in arabic series
-            text = re.sub(r' +ح', '', text)
-            # remove season number in arabic series
-            text = re.sub(r' +ج', '', text)
-            # remove season number in arabic series
-            text = re.sub(r' +م', '', text)
-            # List of bad strings to remove
-            bad_strings = [
-                "ae|", "al|", "ar|", "at|", "ba|", "be|", "bg|", "br|", "cg|", "ch|", "cz|", "da|", "de|", "dk|",
-                "ee|", "en|", "es|", "eu|", "ex-yu|", "fi|", "fr|", "gr|", "hr|", "hu|", "in|", "ir|", "it|", "lt|",
-                "mk|", "mx|", "nl|", "no|", "pl|", "pt|", "ro|", "rs|", "ru|", "se|", "si|", "sk|", "sp|", "tr|",
-                "uk|", "us|", "yu|",
-                "1080p", "1080p-dual-lat-cine-calidad.com", "1080p-dual-lat-cine-calidad.com-1",
-                "1080p-dual-lat-cinecalidad.mx", "1080p-lat-cine-calidad.com", "1080p-lat-cine-calidad.com-1",
-                "1080p-lat-cinecalidad.mx", "1080p.dual.lat.cine-calidad.com", "3d", "'", "#", "[]",  # "/", "(", ")", "-",
-                "4k", "720p", "aac", "blueray", "ex-yu:", "fhd", "hd", "hdrip", "hindi", "imdb", "multi:", "multi-audio",
-                "multi-sub", "multi-subs", "multisub", "ozlem", "sd", "top250", "u-", "uhd", "vod", "x264"
-            ]
-
-            # Remove numbers from 1900 to 2030
-            bad_strings.extend(map(str, range(1900, 2030)))
-            # Construct a regex pattern to match any of the bad strings
-            bad_strings_pattern = re.compile('|'.join(map(re.escape, bad_strings)))
-            # Remove bad strings using regex pattern
-            text = bad_strings_pattern.sub('', text)
-            # List of bad suffixes to remove
-            bad_suffix = [
-                " al", " ar", " ba", " da", " de", " en", " es", " eu", " ex-yu", " fi", " fr", " gr", " hr", " mk",
-                " nl", " no", " pl", " pt", " ro", " rs", " ru", " si", " swe", " sw", " tr", " uk", " yu"
-            ]
-            # Construct a regex pattern to match any of the bad suffixes at the end of the string
-            bad_suffix_pattern = re.compile(r'(' + '|'.join(map(re.escape, bad_suffix)) + r')$')
-            # Remove bad suffixes using regex pattern
-            text = bad_suffix_pattern.sub('', text)
-            # Replace ".", "_", "'" with " "
-            text = re.sub(r'[._\']', ' ', text)
-            # recoded lulu
-            text = text + 'FIN'
-            '''
-            if re.search(r'[Ss][0-9][Ee][0-9]+.*?FIN', text):
-                text = re.sub(r'[Ss][0-9][Ee][0-9]+.*?FIN', '', text)
-            if re.search(r'[Ss][0-9] [Ee][0-9]+.*?FIN', text):
-                text = re.sub(r'[Ss][0-9] [Ee][0-9]+.*?FIN', '', text)
-            '''
-            text = re.sub(r'(odc.\s\d+)+.*?FIN', '', text)
-            text = re.sub(r'(odc.\d+)+.*?FIN', '', text)
-            text = re.sub(r'(\d+)+.*?FIN', '', text)
-            text = text.partition("(")[0] + 'FIN'
-            text = re.sub(r"\\s\d+", "", text)
-            text = text.partition("(")[0]
-            # text = text.partition(":")[0]  # not work on csi: new york (only-->  csi)
-            text = text.partition(" -")[0]
-            text = re.sub(' - +.+?FIN', '', text)  # all episodes and series ????
-            text = re.sub('FIN', '', text)
-            text = re.sub(r"[\<\>\:\"\/\\\|\?\*!]", "_", str(text))
-            # text = re.sub(r'^\|[\w\-\|]*\|', '', text)
-            text = re.sub(r"[-,?!+/\.\":]", '', text)  # replace (- or , or ! or / or . or " or :) by space
-            # recoded  end
-            text = text.strip(' -')
-            # forced
-            text = text.replace('XXXXXX', '60')
-            text = text.replace('brunobarbierix', 'bruno barbieri - 4 hotel')
-            text = quote(text, safe="")
-            print('text safe: ', text)
-        return unquote(text).capitalize()
-    except Exception as e:
-        print('convtext error: ', e)
-        pass
-
-
 class PosterDB(AglarePosterXDownloadThread):
     def __init__(self):
         AglarePosterXDownloadThread.__init__(self)
@@ -587,23 +188,25 @@ class PosterDB(AglarePosterXDownloadThread):
             canal = pdb.get()
             self.logDB("[QUEUE] : {} : {}-{} ({})".format(canal[0], canal[1], canal[2], canal[5]))
             self.pstcanal = convtext(canal[5])
-            if self.pstcanal != 'None' or self.pstcanal is not None:
-                dwn_poster = path_folder + '/' + self.pstcanal + ".jpg"
+
+            if self.pstcanal is not None:
+                dwn_poster = os.path.join(path_folder, self.pstcanal + ".jpg")
             else:
-                # Gestisci il caso in cui self.pstcanal è None o non valido
-                # dwn_poster = path_folder + '/default.jpg'  # Esempio di fallback
-                print('none type xxxxxxxxxx- posterx')
-                return
+                print("None type detected - poster not found")
+                pdb.task_done()  # Per evitare il blocco del thread
+                continue
+
             if os.path.exists(dwn_poster):
                 os.utime(dwn_poster, (time.time(), time.time()))
+
             '''
-            # if lng == "fr":
-                # if not os.path.exists(dwn_poster):
-                    # val, log = self.search_molotov_google(dwn_poster, canal[5], canal[4], canal[3], canal[0])
-                    # self.logDB(log)
-                # if not os.path.exists(dwn_poster):
-                    # val, log = self.search_programmetv_google(dwn_poster, canal[5], canal[4], canal[3], canal[0])
-                    # self.logDB(log)
+            if lng == "fr":
+                if not os.path.exists(dwn_poster):
+                    val, log = self.search_molotov_google(dwn_poster, canal[5], canal[4], canal[3], canal[0])
+                    self.logDB(log)
+                if not os.path.exists(dwn_poster):
+                    val, log = self.search_programmetv_google(dwn_poster, canal[5], canal[4], canal[3], canal[0])
+                    self.logDB(log)
             '''
             if not os.path.exists(dwn_poster):
                 val, log = self.search_tmdb(dwn_poster, self.pstcanal, canal[4], canal[3])
@@ -620,15 +223,41 @@ class PosterDB(AglarePosterXDownloadThread):
             elif not os.path.exists(dwn_poster):
                 val, log = self.search_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
                 self.logDB(log)
+            '''
+            search_methods = [
+                self.search_tmdb,
+                self.search_tvdb,
+                self.search_fanart,
+                self.search_imdb,
+                self.search_google
+            ]
+
+            for search_method in search_methods:
+                if not os.path.exists(dwn_poster):
+                    result = search_method(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
+
+                    if result is None:
+                        self.logDB("[ERROR] Search method '{}' returned None".format(search_method.__name__))
+                        continue
+
+                    try:
+                        val, log = result
+                    except ValueError:
+                        self.logDB("[ERROR] Unexpected result from '{}': {}".format(search_method.__name__, result))
+                        continue
+
+                    self.logDB(log)
+                    if "SUCCESS" in log:
+                        break
+            '''
             pdb.task_done()
 
     def logDB(self, logmsg):
-        import traceback
         try:
             with open("/tmp/PosterDB.log", "a") as w:
                 w.write("%s\n" % logmsg)
         except Exception as e:
-            print('logDB error:', str(e))
+            print("logDB error:", str(e))
             traceback.print_exc()
 
 
@@ -640,9 +269,10 @@ class PosterAutoDB(AglarePosterXDownloadThread):
     def __init__(self):
         AglarePosterXDownloadThread.__init__(self)
         self.logdbg = None
+        self.pstcanal = None
 
     def run(self):
-        self.logAutoDB("[AutoDB] *** Initialized")
+        self.logAutoDB("[AutoDB] *** Initialized ***")
         while True:
             time.sleep(7200)  # 7200 - Start every 2 hours
             self.logAutoDB("[AutoDB] *** Running ***")
@@ -651,44 +281,48 @@ class PosterAutoDB(AglarePosterXDownloadThread):
             for service in apdb.values():
                 try:
                     events = epgcache.lookupEvent(['IBDCTESX', (service, 0, -1, 1440)])
+                    '''
+                    # if not events:
+                        # self.logAutoDB("[AutoDB] No events found for service: {}".format(service))
+                        # continue
+                    '''
                     newfd = 0
                     newcn = None
                     for evt in events:
-                        self.logAutoDB("[AutoDB] evt {} events ({})".format(evt, events))
-                        canal = [None, None, None, None, None, None]
+                        self.logAutoDB("[AutoDB] evt {} events ({})".format(evt, len(events)))
+                        canal = [None] * 6
                         if PY3:
                             canal[0] = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
                         else:
                             canal[0] = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '').encode('utf-8')
                         if evt[1] is None or evt[4] is None or evt[5] is None or evt[6] is None:
-                            self.logAutoDB("[AutoDB] *** missing epg for {}".format(canal[0]))
+                            self.logAutoDB("[AutoDB] *** Missing EPG for {}".format(canal[0]))
                         else:
-                            canal[1] = evt[1]
-                            canal[2] = evt[4]
-                            canal[3] = evt[5]
-                            canal[4] = evt[6]
-                            canal[5] = canal[2]
-                            if canal[5] and canal[5] != 'None' or canal[5] is not None:
-                                self.pstcanal = convtext(canal[5])
-                            else:
-                                # Gestisci il caso in cui self.pstcanal è None o non valido
-                                # dwn_poster = path_folder + '/default.jpg'  # Esempio di fallback
-                                print('none type xxxxxxxxxx- posterx')
-                                return
+                            canal[1:6] = [evt[1], evt[4], evt[5], evt[6], evt[4]]
+                            self.pstcanal = convtext(canal[5]) if canal[5] else None
 
-                            dwn_poster = os.path.join(path_folder, self.pstcanal + ".jpg")
+                            if self.pstcanal is not None:
+                                dwn_poster = os.path.join(path_folder, self.pstcanal + ".jpg")
+                            else:
+                                print("None type detected - poster not found")
+                                continue
+
+                            # if not self.pstcanal:
+                                # self.logAutoDB("None type - poster not found")
+                                # continue
+
                             if os.path.exists(dwn_poster):
                                 os.utime(dwn_poster, (time.time(), time.time()))
                             '''
-                            # if lng == "fr":
-                                # if not os.path.exists(dwn_poster):
-                                    # val, log = self.search_molotov_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
-                                    # if val and log.find("SUCCESS"):
-                                        # newfd += 1
-                                # if not os.path.exists(dwn_poster):
-                                    # val, log = self.search_programmetv_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
-                                    # if val and log.find("SUCCESS"):
-                                        # newfd += 1
+                            if lng == "fr":
+                                if not os.path.exists(dwn_poster):
+                                    val, log = self.search_molotov_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
+                                    if val and log.find("SUCCESS"):
+                                        newfd += 1
+                                if not os.path.exists(dwn_poster):
+                                    val, log = self.search_programmetv_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
+                                    if val and log.find("SUCCESS"):
+                                        newfd += 1
                             '''
                             if not os.path.exists(dwn_poster):
                                 val, log = self.search_tmdb(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
@@ -710,33 +344,64 @@ class PosterAutoDB(AglarePosterXDownloadThread):
                                 val, log = self.search_google(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
                                 if val and log.find("SUCCESS"):
                                     newfd += 1
+                            '''
+                            search_methods = [
+                                self.search_tmdb,
+                                self.search_tvdb,
+                                self.search_fanart,
+                                self.search_imdb,
+                                self.search_google
+                            ]
+
+                            for search_method in search_methods:
+                                if not os.path.exists(dwn_poster):
+                                    result = search_method(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
+
+                                    if result is None:
+                                        self.logAutoDB("[ERROR] Search method '{}' returned None".format(search_method.__name__))
+                                        continue
+
+                                    try:
+                                        val, log = result
+                                    except ValueError:
+                                        self.logAutoDB("[ERROR] Unexpected result from '{}': {}".format(search_method.__name__, result))
+                                        continue
+
+                                    self.logAutoDB(log)
+                                    if val and "SUCCESS" in log:
+                                        newfd += 1
+                                        break
+                            '''
                             newcn = canal[0]
+
                         self.logAutoDB("[AutoDB] {} new file(s) added ({})".format(newfd, newcn))
                 except Exception as e:
-                    self.logAutoDB("[AutoDB] *** service error ({})".format(e))
+                    self.logAutoDB("[AutoDB] *** Service error: {}".format(e))
+                    traceback.print_exc()
             # AUTO REMOVE OLD FILES
             now_tm = time.time()
             emptyfd = 0
             oldfd = 0
             for f in os.listdir(path_folder):
-                diff_tm = now_tm - os.path.getmtime(path_folder + '/' + f)
-                if diff_tm > 120 and os.path.getsize(path_folder + '/' + f) == 0:  # Detect empty files > 2 minutes
-                    os.remove(path_folder + '/' + f)
+                file_path = os.path.join(path_folder, f)
+                diff_tm = now_tm - os.path.getmtime(file_path)
+                if diff_tm > 120 and os.path.getsize(file_path) == 0:
+                    os.remove(file_path)
                     emptyfd += 1
-                if diff_tm > 31536000:  # Detect old files > 365 days old
-                    os.remove(path_folder + '/' + f)
-                    oldfd = oldfd + 1
+                elif diff_tm > 31536000:
+                    os.remove(file_path)
+                    oldfd += 1
             self.logAutoDB("[AutoDB] {} old file(s) removed".format(oldfd))
             self.logAutoDB("[AutoDB] {} empty file(s) removed".format(emptyfd))
             self.logAutoDB("[AutoDB] *** Stopping ***")
 
     def logAutoDB(self, logmsg):
-        import traceback
         try:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with open("/tmp/PosterAutoDB.log", "a") as w:
-                w.write("%s\n" % logmsg)
+                w.write("[{}] {}\n".format(timestamp, logmsg))
         except Exception as e:
-            print('logAutoDB error', str(e))
+            print("logAutoDB error: {}".format(e))
             traceback.print_exc()
 
 
@@ -746,14 +411,18 @@ threadAutoDB.start()
 
 class AglarePosterX(Renderer):
     def __init__(self):
-        adsl = intCheck()
-        if not adsl:
-            return
         Renderer.__init__(self)
+        self.adsl = intCheck()
+        if not self.adsl:
+            print("Connessione assente, modalità offline.")
+            return
+        else:
+            print("Connessione rilevata.")
         self.nxts = 0
         self.path = path_folder  # + '/'
         self.canal = [None, None, None, None, None, None]
         self.oldCanal = None
+        self.pstrNm = None
         self.logdbg = None
         self.pstcanal = None
         self.timer = eTimer()
@@ -761,7 +430,6 @@ class AglarePosterX(Renderer):
             self.timer_conn = self.timer.timeout.connect(self.showPoster)
         except:
             self.timer.callback.append(self.showPoster)
-        # self.timer.start(10, True)
 
     def applySkin(self, desktop, parent):
         attribs = []
@@ -780,116 +448,126 @@ class AglarePosterX(Renderer):
         if not self.instance:
             return
         if what[0] == self.CHANGED_CLEAR:
+            self.instance.hide()
+            return
+
+        servicetype = None
+        try:
+            service = None
+            source_type = type(self.source)
+            if source_type is ServiceEvent:  # source="ServiceEvent"
+                service = self.source.getCurrentService()
+                servicetype = "ServiceEvent"
+            elif source_type is CurrentService:  # source="session.CurrentService"
+                service = self.source.getCurrentServiceRef()
+                servicetype = "CurrentService"
+            elif source_type is EventInfo:  # source="session.Event_Now" or source="session.Event_Next"
+                service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
+                servicetype = "EventInfo"
+            elif source_type is Event:  # source="Event"
+                if self.nxts:
+                    service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
+                else:
+                    self.canal[0] = None
+                    self.canal[1] = self.source.event.getBeginTime()
+                    event_name = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+                    if not PY3:
+                        event_name = event_name.encode('utf-8')
+                    self.canal[2] = event_name
+                    self.canal[3] = self.source.event.getExtendedDescription()
+                    self.canal[4] = self.source.event.getShortDescription()
+                    self.canal[5] = event_name
+                servicetype = "Event"
+            if service is not None:
+                service_str = service.toString()
+                events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
+                service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+                if not PY3:
+                    service_name = service_name.encode('utf-8')
+                self.canal[0] = service_name
+                self.canal[1] = events[self.nxts][1]
+                self.canal[2] = events[self.nxts][4]
+                self.canal[3] = events[self.nxts][5]
+                self.canal[4] = events[self.nxts][6]
+                self.canal[5] = self.canal[2]
+
+                if not autobouquet_file and service_name not in apdb:
+                    apdb[service_name] = service_str
+
+        except Exception as e:
+            print("Error (service):", str(e))
             if self.instance:
                 self.instance.hide()
             return
-        if what[0] != self.CHANGED_CLEAR:
-            servicetype = None
-            try:
-                service = None
-                if isinstance(self.source, ServiceEvent):  # source="ServiceEvent"
-                    service = self.source.getCurrentService()
-                    servicetype = "ServiceEvent"
-                elif isinstance(self.source, CurrentService):  # source="session.CurrentService"
-                    service = self.source.getCurrentServiceRef()
-                    servicetype = "CurrentService"
-                elif isinstance(self.source, EventInfo):  # source="session.Event_Now" or source="session.Event_Next"
-                    service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
-                    servicetype = "EventInfo"
-                elif isinstance(self.source, Event):  # source="Event"
-                    if self.nxts:
-                        service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
-                    else:
-                        self.canal[0] = None
-                        self.canal[1] = self.source.event.getBeginTime()
-                        if PY3:
-                            self.canal[2] = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-                        else:
-                            self.canal[2] = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '').encode('utf-8')
-                        self.canal[3] = self.source.event.getExtendedDescription()
-                        self.canal[4] = self.source.event.getShortDescription()
-                        self.canal[5] = self.canal[2]
-                    servicetype = "Event"
-                if service is not None:
-                    events = epgcache.lookupEvent(['IBDCTESX', (service.toString(), 0, -1, -1)])
-                    if PY3:
-                        self.canal[0] = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')  # .encode('utf-8')
-                    else:
-                        self.canal[0] = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '').encode('utf-8')
-                    self.canal[1] = events[self.nxts][1]
-                    self.canal[2] = events[self.nxts][4]
-                    self.canal[3] = events[self.nxts][5]
-                    self.canal[4] = events[self.nxts][6]
-                    self.canal[5] = self.canal[2]
-                    if not autobouquet_file:
-                        if self.canal[0] not in apdb:
-                            apdb[self.canal[0]] = service.toString()
-            except Exception as e:
-                self.logPoster("Error (service) : " + str(e))
-                if self.instance:
-                    self.instance.hide()
+        if not servicetype:
+            print("Error: service type undefined")
+            if self.instance:
+                self.instance.hide()
+            return
+
+        try:
+            curCanal = "{}-{}".format(self.canal[1], self.canal[2])
+            if curCanal == self.oldCanal:
                 return
-            if not servicetype or servicetype is None:
-                self.logPoster("Error service type undefined")
-                if self.instance:
-                    self.instance.hide()
-                return
-            try:
-                curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-                if curCanal == self.oldCanal:
-                    return
-                self.oldCanal = curCanal
-                self.logPoster("Service: {} [{}] : {} : {}".format(servicetype, self.nxts, self.canal[0], self.oldCanal))
-                self.pstcanal = convtext(self.canal[5])
-                if self.pstcanal is not None:
-                    self.pstrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                    self.pstcanal = str(self.pstrNm)
-                if os.path.exists(self.pstcanal):
-                    self.timer.start(10, True)
-                else:
-                    canal = self.canal[:]
-                    pdb.put(canal)
-                    start_new_thread(self.waitPoster, ())
-            except Exception as e:
-                self.logPoster("Error (eFile): " + str(e))
-                if self.instance:
-                    self.instance.hide()
-                return
+
+            self.oldCanal = curCanal
+            self.logPoster("Service: {} [{}] : {} : {}".format(servicetype, self.nxts, self.canal[0], self.oldCanal))
+
+            self.pstcanal = convtext(self.canal[5])
+            if self.pstcanal is not None:
+                self.pstrNm = os.path.join(self.path, str(self.pstcanal) + ".jpg")
+                self.pstcanal = self.pstrNm
+
+            if os.path.exists(self.pstcanal):
+                self.timer.start(10, True)
+            else:
+                canal = self.canal[:]
+                pdb.put(canal)
+                start_new_thread(self.waitPoster, ())
+
+        except Exception as e:
+            print("Error (eFile):", str(e))
+            if self.instance:
+                self.instance.hide()
+            return
+
+    def generatePosterPath(self):
+        """Genera il percorso completo per il poster."""
+        if self.canal and len(self.canal) > 5 and self.canal[5]:
+            pstcanal = convtext(self.canal[5])
+            return os.path.join(self.path, str(pstcanal) + ".jpg")
+        return None
 
     def showPoster(self):
         if self.instance:
             self.instance.hide()
-        if self.canal[5]:
-            if self.pstcanal is not None and not os.path.exists(self.pstcanal):
-                self.pstcanal = convtext(self.canal[5])
-                self.pstrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                self.pstcanal = str(self.pstrNm)
-            if self.pstcanal is not None and os.path.exists(self.pstcanal):
-                print('showPoster----')
-                self.logPoster("[LOAD : showPoster] {}".format(self.pstcanal))
-                self.instance.setPixmap(loadJPG(self.pstcanal))
-                self.instance.setScale(1)
-                self.instance.show()
+        self.pstrNm = self.generatePosterPath()
+        if self.pstrNm and os.path.exists(self.pstrNm):
+            print('showPoster----')
+            self.logPoster("[LOAD : showPoster] " + self.pstrNm)
+            self.instance.setPixmap(loadJPG(self.pstrNm))
+            self.instance.setScale(1)
+            self.instance.show()
 
     def waitPoster(self):
         if self.instance:
             self.instance.hide()
-        if self.canal[5]:
-            if self.pstcanal is not None and not os.path.exists(self.pstcanal):
-                self.pstcanal = convtext(self.canal[5])
-                self.pstrNm = self.path + '/' + str(self.pstcanal) + ".jpg"
-                self.pstcanal = str(self.pstrNm)
-            loop = 180
-            found = None
-            self.logPoster("[LOOP: waitPoster] {}".format(self.pstcanal))
-            while loop >= 0:
-                if self.pstcanal is not None and os.path.exists(self.pstcanal):
-                    loop = 0
-                    found = True
-                time.sleep(0.5)
-                loop = loop - 1
-            if found:
-                self.timer.start(20, True)
+
+        self.pstrNm = self.generatePosterPath()
+        if not self.pstrNm:
+            self.logPoster("[ERROR: waitPoster] Poster path is None")
+            return
+        loop = 180  # Numero massimo di tentativi
+        found = False
+        self.logPoster("[LOOP: waitPoster] " + self.pstrNm)
+        while loop > 0:
+            if os.path.exists(self.pstrNm):
+                found = True
+                break
+            time.sleep(0.5)
+            loop -= 1
+        if found:
+            self.timer.start(10, True)
 
     def logPoster(self, logmsg):
         import traceback

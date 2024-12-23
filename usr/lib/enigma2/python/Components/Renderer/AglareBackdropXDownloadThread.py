@@ -19,7 +19,9 @@ import json
 from random import choice
 from requests import get, exceptions
 from twisted.internet.reactor import callInThread
-# from Tools.BoundFunction import boundFunction
+from .Converlibr import quoteEventName
+
+
 try:
     from http.client import HTTPConnection
     HTTPConnection.debuglevel = 0
@@ -43,11 +45,9 @@ else:
 try:
     from urllib.error import URLError, HTTPError
     from urllib.request import urlopen
-    from urllib.parse import quote_plus
 except:
     from urllib2 import URLError, HTTPError
     from urllib2 import urlopen
-    from urllib import quote_plus
 
 
 try:
@@ -83,19 +83,10 @@ my_cur_skin = False
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 
 
-def clean_recursive(regexStr="", replaceStr="", eventTitle=""):
-    while True:
-        clean_name = re.sub(regexStr, replaceStr, eventTitle)
-        if clean_name == eventTitle:
-            break
-        eventTitle = clean_name
-    return clean_name
-
-
 try:
     if my_cur_skin is False:
         skin_paths = {
-            "tmdb_api": "/usr/share/enigma2/{}/apikey".format(cur_skin),
+            "tmdb_api": "/usr/share/enigma2/{}/tmdbkey".format(cur_skin),
             "omdb_api": "/usr/share/enigma2/{}/omdbkey".format(cur_skin),
             "thetvdbkey": "/usr/share/enigma2/{}/thetvdbkey".format(cur_skin)
         }
@@ -151,40 +142,18 @@ def intCheck():
         return False
     except socket.timeout:
         return False
-    else:
-        return True
-
-
-def quoteEventName(eventName):
-    try:
-        text = eventName.decode('utf8').replace(u'\x86', u'').replace(u'\x87', u'').encode('utf8')
-    except:
-        text = eventName
-    return quote_plus(text, safe="+")
-
-
-def dataenc(data):
-    if PY3:
-        data = data.decode("utf-8")
-    else:
-        data = data.encode("utf-8")
-    return data
-
-
-def sanitize_filename(filename):
-    # Replace spaces with underscores and remove invalid characters (like ':')
-    sanitized = re.sub(r'[^\w\s-]', '', filename)  # Remove invalid characters
-    # sanitized = sanitized.replace(' ', '_')      # Replace spaces with underscores
-    # sanitized = sanitized.replace('-', '_')      # Replace dashes with underscores
-    return sanitized.strip()
+    return True
 
 
 class AglareBackdropXDownloadThread(threading.Thread):
     def __init__(self):
-        adsl = intCheck()
-        if not adsl:
-            return
         threading.Thread.__init__(self)
+        self.adsl = intCheck()
+        if not self.adsl:
+            print("Connessione assente, modalità offline.")
+            return
+        else:
+            print("Connessione rilevata.")
         self.checkMovie = ["film", "movie", "фильм", "кино", "ταινία",
                            "película", "cinéma", "cine", "cinema",
                            "filma"]
@@ -214,7 +183,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             url = f"https://api.themoviedb.org/3/search/multi?api_key={tmdb_api}&language={lng}&query={self.title_safe}"
             print('backdrop search_tmdb url title safe', url)
             data = None
@@ -267,9 +236,10 @@ class AglareBackdropXDownloadThread(threading.Thread):
                         # print('title, poster, backdrop, year, rating, show_title=', title, poster, backdrop, year, rating, show_title)
                         if backdrop:
                             callInThread(self.savebackdrop, backdrop, self.dwn_backdrop)
-                            # self.savebackdrop(self.dwn_backdrop, backdrop)
-                            if self.verifybackdrop(self.dwn_backdrop):
-                                self.resizebackdrop(self.dwn_backdrop)
+                            # # self.savebackdrop(self.dwn_backdrop, backdrop)
+                            # if os.path.exists(self.dwn_backdrop):
+                                # if self.verifybackdrop(self.dwn_backdrop):
+                                    # self.resizebackdrop(self.dwn_backdrop)
                             return True, "[SUCCESS poster: tmdb] title {} [poster{}-backdrop{}] => year{} => rating{} => showtitle{}".format(title, poster, backdrop, year, rating, show_title)
                     return False, "[SKIP : tmdb] Not found"
             except Exception as e:
@@ -287,7 +257,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             year = re.findall(r'19\d{2}|20\d{2}', fd)
             if len(year) > 0:
                 year = year[0]
@@ -298,6 +268,11 @@ class AglareBackdropXDownloadThread(threading.Thread):
             series_id = re.findall(r'<seriesid>(.*?)</seriesid>', url_read)
             series_name = re.findall(r'<SeriesName>(.*?)</SeriesName>', url_read)
             series_year = re.findall(r'<FirstAired>(19\d{2}|20\d{2})-\d{2}-\d{2}</FirstAired>', url_read)
+            '''
+            # series_banners = re.findall(r'<banner>(.*?)</banner>', url_read)
+            # if series_banners:
+                # series_banners = 'https://thetvdb.com' + series_banners
+            '''
             i = 0
             for iseries_year in series_year:
                 if year == '':
@@ -325,11 +300,12 @@ class AglareBackdropXDownloadThread(threading.Thread):
                     if backdrop and backdrop[0]:
                         callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
                         # self.savebackdrop(dwn_backdrop, url_backdrop)
-                        if self.verifybackdrop(dwn_backdrop):
-                            self.resizebackdrop(dwn_backdrop)
-                return True, "[SUCCESS backdrop: tvdb] {} [{}-{}] => {} => {} => {}".format(title, chkType, year, url_tvdbg, url_tvdb, url_backdrop)
+                        if os.path.exists(dwn_backdrop):
+                            # if self.verifybackdrop(dwn_backdrop):
+                                # self.resizebackdrop(dwn_backdrop)
+                            return True, "[SUCCESS backdrop: tvdb] {} [{}-{}] => {} => {} => {}".format(title, chkType, year, url_tvdbg, url_tvdb, url_backdrop)
             else:
-                return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(title, chkType, year, url_tvdbg)
+                return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_tvdbg)
 
         except Exception as e:
             if os.path.exists(dwn_backdrop):
@@ -349,7 +325,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             chkType, fd = self.checkType(shortdesc, fulldesc)
             try:
                 if re.findall(r'19\d{2}|20\d{2}', self.title_safe):
@@ -381,11 +357,11 @@ class AglareBackdropXDownloadThread(threading.Thread):
                 if url_backdrop and url_backdrop != 'null' or url_backdrop is not None or url_backdrop != '':
                     callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
                     # self.savebackdrop(dwn_backdrop, url_backdrop)
-                    if self.verifybackdrop(dwn_backdrop):
-                        self.resizebackdrop(dwn_backdrop)
-                    return True, "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(self.title_safe, chkType, year, url_maze, url_fanart, url_backdrop)
-                else:
-                    return False, "[SKIP : fanart] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_maze)
+                    if os.path.exists(dwn_backdrop):
+                        # if self.verifybackdrop(dwn_backdrop):
+                            # self.resizebackdrop(dwn_backdrop)
+                        return True, "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(self.title_safe, chkType, year, url_maze, url_fanart, url_backdrop)
+                return False, "[SKIP : fanart] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_maze)
             except Exception as e:
                 print(e)
 
@@ -403,7 +379,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             aka = re.findall(r'\((.*?)\)', fd)
             if len(aka) > 1 and not aka[1].isdigit():
                 aka = aka[1]
@@ -476,12 +452,15 @@ class AglareBackdropXDownloadThread(threading.Thread):
 
             if url_backdrop and pfound:
                 callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
-                # self.savebackdrop(dwn_backdrop, url_backdrop)
-                if self.verifybackdrop(dwn_backdrop):
-                    self.resizebackdrop(dwn_backdrop)
-                return True, "[SUCCESS url_backdrop: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_backdrop)
-            else:
-                return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
+                if os.path.exists(dwn_backdrop):
+                    # # self.savebackdrop(dwn_backdrop, url_backdrop)
+                    # if self.verifybackdrop(dwn_backdrop):
+                        # self.resizebackdrop(dwn_backdrop)
+                                                            
+                                                                                                                                                                                          
+
+                    return True, "[SUCCESS url_backdrop: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_backdrop)
+            return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
         except Exception as e:
             if os.path.exists(dwn_backdrop):
                 os.remove(dwn_backdrop)
@@ -500,7 +479,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             url_ptv = "site:programme-tv.net+" + self.title_safe
             if channel and self.title_safe.find(channel.split()[0]) < 0:
                 url_ptv += "+" + quoteEventName(channel)
@@ -529,14 +508,11 @@ class AglareBackdropXDownloadThread(threading.Thread):
                         url_backdrop = re.sub(r'crop-from/top/', '', url_backdrop)
                         callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
                         # self.savebackdrop(dwn_backdrop, url_backdrop)
-                        if self.verifybackdrop(dwn_backdrop) and url_backdrop_size:
-                            self.resizebackdrop(dwn_backdrop)
+                        if os.path.exists(dwn_backdrop):
+                            # if self.verifybackdrop(dwn_backdrop):
+                                # self.resizebackdrop(dwn_backdrop)
                             return True, "[SUCCESS url_backdrop: programmetv-google] {} [{}] => Found title : '{}' => {} => {} (initial size: {}) [{}]".format(title, chkType, get_title, url_ptv, url_backdrop, url_backdrop_size, ptv_id)
-                        else:
-                            if os.path.exists(dwn_backdrop):
-                                os.remove(dwn_backdrop)
-
-            return False, "[SKIP : programmetv-google] {} [{}] => Not found [{}] => {}".format(self.title_safe, chkType, ptv_id, url_ptv)
+                return False, "[SKIP : programmetv-google] {} [{}] => Not found [{}] => {}".format(self.title_safe, chkType, ptv_id, url_ptv)
 
         except Exception as e:
             if os.path.exists(dwn_backdrop):
@@ -553,7 +529,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             if channel:
                 pchannel = self.UNAC(channel).replace(' ', '')
             else:
@@ -651,15 +627,12 @@ class AglareBackdropXDownloadThread(threading.Thread):
                 url_backdrop = re.sub(r'/\d+x\d+/', "/" + re.sub(r',', 'x', isz) + "/", backdrop)
                 callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
                 # self.savebackdrop(dwn_backdrop, url_backdrop)
-                if self.verifybackdrop(dwn_backdrop):
-                    self.resizebackdrop(dwn_backdrop)
+                if os.path.exists(dwn_backdrop):
+                    # if self.verifybackdrop(dwn_backdrop):
+                        # self.resizebackdrop(dwn_backdrop)
                     return True, "[SUCCESS url_backdrop: molotov-google] {} ({}) [{}] => {} => {} => {}".format(self.title_safe, channel, chkType, imsg, url_mgoo, url_backdrop)
-                else:
-                    if os.path.exists(dwn_backdrop):
-                        os.remove(dwn_backdrop)
-                    return False, "[SKIP : molotov-google] {} ({}) [{}] => {} => {} => {} (jpeg error)".format(self.title_safe, channel, chkType, imsg, url_mgoo, url_backdrop)
-            else:
-                return False, "[SKIP : molotov-google] {} ({}) [{}] => {} => {}".format(self.title_safe, channel, chkType, imsg, url_mgoo)
+                return False, "[SKIP : molotov-google] {} ({}) [{}] => {} => {} => {} (jpeg error)".format(self.title_safe, channel, chkType, imsg, url_mgoo, url_backdrop)
+            return False, "[SKIP : molotov-google] {} ({}) [{}] => {} => {}".format(self.title_safe, channel, chkType, imsg, url_mgoo)
         except Exception as e:
             if os.path.exists(dwn_backdrop):
                 os.remove(dwn_backdrop)
@@ -678,7 +651,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
             # title_safe = quoteEventName(title_safe)
             self.title_safe = title_safe.replace('+', ' ')
             # Sanitize the filename before saving
-            self.title_safe = sanitize_filename(self.title_safe)
+            # self.title_safe = sanitize_filename(self.title_safe)
             year = re.findall(r'19\d{2}|20\d{2}', fd)
             if len(year) > 0:
                 year = year[0]
@@ -695,9 +668,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
                 url_google += "+{}".format(srch)
             if year:
                 url_google += "+{}".format(year)
-            # url_google = "https://www.google.com/search?q={}&tbm=isch".format(url_google)
             url_google = "https://www.google.com/search?q={}&tbm=isch&tbs=sbd:0".format(url_google)
-            # url_google += "+{}".format(poster)
             ff = requests.get(url_google, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 
             backdroplst = re.findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
@@ -711,36 +682,23 @@ class AglareBackdropXDownloadThread(threading.Thread):
                 url_backdrop = "https://{}".format(pl)
                 url_backdrop = re.sub(r"\\u003d", "=", url_backdrop)
                 callInThread(self.savebackdrop, url_backdrop, dwn_backdrop)
-                # self.savebackdrop(dwn_backdrop, url_backdrop)
-                if self.verifybackdrop(dwn_backdrop):
-                    self.resizebackdrop(dwn_backdrop)
+                if os.path.exists(dwn_backdrop):
+                    # # self.savebackdrop(dwn_backdrop, url_backdrop)
+                    # if self.verifybackdrop(dwn_backdrop):
+                        # self.resizebackdrop(dwn_backdrop)
                     backdrop = pl
                     break
 
-            if backdrop:
+            if backdrop is not None:
                 return True, "[SUCCESS backdrop: google] {} [{}-{}] => {} => {}".format(self.title_safe, chkType, year, url_google, url_backdrop)
-            else:
-                if os.path.exists(dwn_backdrop):
-                    os.remove(dwn_backdrop)
-                return False, "[SKIP : google] {} [{}-{}] => {} => {} (Not found)".format(self.title_safe, chkType, year, url_google, url_backdrop)
+            return False, "[SKIP : google] {} [{}-{}] => {} => {} (Not found)".format(self.title_safe, chkType, year, url_google, url_backdrop)
 
         except Exception as e:
             if os.path.exists(dwn_backdrop):
                 os.remove(dwn_backdrop)
             return False, "[ERROR : google] {} [{}-{}] => {} => {} ({})".format(self.title_safe, chkType, year, url_google, url_backdrop, str(e))
 
-    # def savebackdrop(self, dwn_backdrop, url_backdrop):
-        # print('savebackdrop url_poster=', url_backdrop)
-        # if not os.path.exists(dwn_backdrop):
-            # data = urlopen(url_backdrop)
-            # with open(dwn_backdrop, "wb") as local_file:
-                # local_file.write(data.read())
-        # if os.path.exists(dwn_backdrop):
-            # if os.path.getsize(dwn_backdrop) == 0:
-                # os.remove(dwn_backdrop)
-        # return
-
-    def savePoster(self, url, callback):
+    def savebackdrop(self, url, callback):
         print('000000000URLLLLL=', url)
         print('000000000CALLBACK=', callback)
         AGENTS = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
@@ -759,12 +717,7 @@ class AglareBackdropXDownloadThread(threading.Thread):
 
         except exceptions.RequestException as error:
             print("ERROR in module 'download': %s" % (str(error)))
-        else:
-            if os.path.exists(callback):
-                if os.path.getsize(callback) == 0:
-                    os.remove(callback)
-            return callback
-            # callback(response.content)
+        return callback
 
     def resizebackdrop(self, dwn_backdrop):
         try:
@@ -822,9 +775,6 @@ class AglareBackdropXDownloadThread(threading.Thread):
         string = re.sub(r"u003d", "=", string)
         string = re.sub(r'[\u0300-\u036f]', '', string)
         string = re.sub(r"[,!?\.\"]", ' ', string)
-        # string = re.sub(r"[-/:']", '', string)
-        # string = re.sub(r"[^a-zA-Z0-9 ]", "", string)
-        # string = string.lower()
         string = re.sub(r'\s+', ' ', string)
         string = string.strip()
         return string

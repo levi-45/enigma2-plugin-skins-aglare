@@ -4,6 +4,7 @@
 from . import _
 from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
+from Components.ConfigList import ConfigListScreen
 from Components.config import (
     # ConfigInteger,
     # ConfigNothing,
@@ -17,12 +18,12 @@ from Components.config import (
     config,
     getConfigListEntry,
 )
-from Components.ConfigList import ConfigListScreen
 from Components.Label import Label
 from Components.Pixmap import Pixmap
 from Components.Sources.Progress import Progress
 from Components.Sources.StaticText import StaticText
-from enigma import ePicLoad, eTimer
+from enigma import ePicLoad, eTimer, loadPic
+from PIL import Image
 from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
@@ -33,7 +34,7 @@ from Tools.Directories import resolveFilename
 from Tools.Downloader import downloadWithProgress
 import os
 import sys
-
+import glob
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -44,13 +45,13 @@ else:
     from urllib2 import Request
 
 
-version = '4.6'
+version = '1.0'
 my_cur_skin = False
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 OAWeather = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('OAWeather'))
 weatherz = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('WeatherPlugin'))
 mvi = '/usr/share/'
-tmdb_skin = "%senigma2/%s/apikey" % (mvi, cur_skin)
+tmdb_skin = "%senigma2/%s/tmdbkey" % (mvi, cur_skin)
 tmdb_api = "3c3efcf47c3577558812bb9d64019d65"
 omdb_skin = "%senigma2/%s/omdbkey" % (mvi, cur_skin)
 omdb_api = "cb1d9f55"
@@ -58,13 +59,13 @@ omdb_api = "cb1d9f55"
 try:
     if my_cur_skin is False:
         skin_paths = {
-            "tmdb_api": "/usr/share/enigma2/{}/apikey".format(cur_skin),
+            "tmdb_api": "/usr/share/enigma2/{}/tmdbkey".format(cur_skin),
             "omdb_api": "/usr/share/enigma2/{}/omdbkey".format(cur_skin),
             # "thetvdbkey": "/usr/share/enigma2/{}/thetvdbkey".format(cur_skin)
-            # "visual_api": "/etc/enigma2/VisualWeather/apikey.txt"
+            # "visual_api": "/etc/enigma2/VisualWeather/visualkey.txt"
         }
         for key, path in skin_paths.items():
-            if os.path.exists(path):
+            if fileExists(path):
                 with open(path, "r") as f:
                     value = f.read().strip()
                     if key == "tmdb_api":
@@ -80,6 +81,65 @@ except Exception as e:
     print("Errore nel caricamento delle API:", str(e))
     my_cur_skin = False
 
+
+def isMountedInRW(mount_point):
+    with open("/proc/mounts", "r") as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) > 1 and parts[1] == mount_point:
+                return True
+    return False
+
+
+path_poster = "/tmp/poster"
+patch_backdrop = "/tmp/backdrop"
+if os.path.exists("/media/hdd") and isMountedInRW("/media/hdd"):
+    path_poster = "/media/hdd/poster"
+    patch_backdrop = "/media/hdd/backdrop"
+
+elif os.path.exists("/media/usb") and isMountedInRW("/media/usb"):
+    path_poster = "/media/usb/poster"
+    patch_backdrop = "/media/usb/backdrop"
+
+elif os.path.exists("/media/mmc") and isMountedInRW("/media/mmc"):
+    path_poster = "/media/mmc/poster"
+    patch_backdrop = "/media/mmc/backdrop"
+
+
+def removePng():
+    print('Rimuovo file PNG e JPG...')
+    if os.path.exists(path_poster):
+        png_files = glob.glob(os.path.join(path_poster, "*.png"))
+        jpg_files = glob.glob(os.path.join(path_poster, "*.jpg"))
+        files_to_remove = png_files + jpg_files
+        if not files_to_remove:
+            print("Nessun file PNG o JPG trovato nella cartella " + path_poster)
+        for file in files_to_remove:
+            try:
+                os.remove(file)
+                print("Rimosso: " + file)
+            except Exception as e:
+                print("Errore durante la rimozione di " + file + ": " + str(e))
+    else:
+        print("La cartella " + path_poster + " non esiste.")
+
+    if os.path.exists(patch_backdrop):
+        png_files_backdrop = glob.glob(os.path.join(patch_backdrop, "*.png"))
+        jpg_files_backdrop = glob.glob(os.path.join(patch_backdrop, "*.jpg"))
+        files_to_remove_backdrop = png_files_backdrop + jpg_files_backdrop
+        if not files_to_remove_backdrop:
+            print("Nessun file PNG o JPG trovato nella cartella " + patch_backdrop)
+        else:
+            for file in files_to_remove_backdrop:
+                try:
+                    os.remove(file)
+                    print("Rimosso: " + file)
+                except Exception as e:
+                    print("Errore durante la rimozione di " + file + ": " + str(e))
+    else:
+        print("La cartella " + patch_backdrop + " non esiste.")
+
+
 config.plugins.Aglare = ConfigSubsection()
 config.plugins.Aglare.actapi = NoSave(ConfigOnOff(default=False))
 config.plugins.Aglare.data = NoSave(ConfigOnOff(default=False))
@@ -88,6 +148,7 @@ config.plugins.Aglare.txtapi = ConfigText(default=tmdb_api, visible_width=50, fi
 config.plugins.Aglare.data2 = NoSave(ConfigOnOff(default=False))
 config.plugins.Aglare.api2 = NoSave(ConfigYesNo(default=False))  # NoSave(ConfigSelection(['-> Ok']))
 config.plugins.Aglare.txtapi2 = ConfigText(default=omdb_api, visible_width=50, fixed_size=False)
+config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))  # NoSave(ConfigSelection(['-> Ok']))
 config.plugins.Aglare.colorSelector = ConfigSelection(default='head', choices=[
     ('head', _('Default')),
     ('color1', _('Black')),
@@ -110,7 +171,9 @@ config.plugins.Aglare.skinSelector = ConfigSelection(default='base', choices=[
     ('base', _('Default'))])
 config.plugins.Aglare.InfobarStyle = ConfigSelection(default='infobar_base1', choices=[
     ('infobar_base1', _('Default')),
-    ('infobar_base2', _('Style2'))])
+    ('infobar_base2', _('Style2')),
+    ('infobar_base3', _('Style3')),
+    ('infobar_base4', _('Style4'))])
 config.plugins.Aglare.InfobarPosterx = ConfigSelection(default='infobar_posters_posterx_off', choices=[
     ('infobar_posters_posterx_off', _('OFF')),
     ('infobar_posters_posterx_on', _('ON'))])
@@ -126,7 +189,9 @@ config.plugins.Aglare.InfobarWeather = ConfigSelection(default='infobar_no_weath
     ('infobar_weather', _('Infobar_Weather'))])
 config.plugins.Aglare.SecondInfobarStyle = ConfigSelection(default='secondinfobar_base1', choices=[
     ('secondinfobar_base1', _('Default')),
-    ('secondinfobar_base2', _('Style2'))])
+    ('secondinfobar_base2', _('Style2')),
+    ('secondinfobar_base3', _('Style3')),
+    ('secondinfobar_base4', _('Style4'))])
 config.plugins.Aglare.SecondInfobarPosterx = ConfigSelection(default='secondinfobar_posters_posterx_off', choices=[
     ('secondinfobar_posters_posterx_off', _('OFF')),
     ('secondinfobar_posters_posterx_on', _('ON'))])
@@ -150,17 +215,33 @@ config.plugins.Aglare.VolumeBar = ConfigSelection(default='volume1', choices=[
     ('volume1', _('Default')),
     ('volume2', _('volume2'))])
 
+config.plugins.Aglare.E2iplayerskins = ConfigSelection(default='OFF', choices=[
+    ('e2iplayer_skin_off', _('OFF')),
+    ('e2iplayer_skin_on', _('ON'))])
+
 
 def Plugins(**kwargs):
-    return PluginDescriptor(name='Setup Aglare', description=_('Customization tool for Aglare-FHD-PLI Skin'), where=PluginDescriptor.WHERE_PLUGINMENU, icon='plugin.png', fnc=main)
+    return PluginDescriptor(name='SF Setup Aglare', description=_('Customization tool for Aglare-FHD-PLI Skin'), where=PluginDescriptor.WHERE_PLUGINMENU, icon='plugin.png', fnc=main)
 
 
 def main(session, **kwargs):
     session.open(AglareSetup)
 
 
+def remove_exif(image_path):
+    with Image.open(image_path) as img:
+        img.save(image_path, "PNG")
+
+
+def convert_image(image):
+    path = image
+    img = Image.open(path)
+    img.save(path, "PNG")
+    return image
+
+
 class AglareSetup(ConfigListScreen, Screen):
-    skin = '<screen name="AglareSetup" position="160,220" size="1600,680" title="Aglare-FHD Skin Controler" backgroundColor="back">  <eLabel font="Regular; 24" foregroundColor="#00ff4A3C" halign="center" position="20,620" size="120,40" text="Cancel" />  <eLabel font="Regular; 24" foregroundColor="#0056C856" halign="center" position="310,620" size="120,40" text="Save" />  <eLabel font="Regular; 24" foregroundColor="#00fbff3c" halign="center" position="600,620" size="120,40" text="Update" />  <eLabel font="Regular; 24" foregroundColor="#00403cff" halign="center" position="860,620" size="120,40" text="Info" />  <widget name="Preview" position="1057,146" size="498, 280" zPosition="1" /> <widget name="config" font="Regular; 24" itemHeight="50" position="5,5" scrollbarMode="showOnDemand" size="990,600" /></screen>'
+    skin = '<screen name="AglareSetup" position="160,220" size="1600,680" title="Aglare-FHD-PLI Skin Controler" backgroundColor="back">  <eLabel font="Regular; 24" foregroundColor="#00ff4A3C" halign="center" position="20,620" size="120,40" text="Cancel" />  <eLabel font="Regular; 24" foregroundColor="#0056C856" halign="center" position="310,620" size="120,40" text="Save" />  <eLabel font="Regular; 24" foregroundColor="#00fbff3c" halign="center" position="600,620" size="120,40" text="Update" />  <eLabel font="Regular; 24" foregroundColor="#00403cff" halign="center" position="860,620" size="120,40" text="Info" />  <widget name="Preview" position="1057,146" size="498, 280" zPosition="1" /> <widget name="config" font="Regular; 24" itemHeight="50" position="5,5" scrollbarMode="showOnDemand" size="990,600" /></screen>'
 
     def __init__(self, session):
         self.version = '.Aglare-FHD-PLI'
@@ -170,19 +251,18 @@ class AglareSetup(ConfigListScreen, Screen):
         self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
         self['Preview'] = Pixmap()
         self.onChangedEntry = []
+        self.setup_title = ('Aglare-FHD-PLI')
         list = []
-
+        section = '--------------------------( SKIN GENERAL SETUP )-----------------------'
+        list.append(getConfigListEntry(section))
+        section = '--------------------------( SKIN APIKEY SETUP )-----------------------'
+        list.append(getConfigListEntry(section))
         ConfigListScreen.__init__(self, list, session=self.session, on_change=self.changedEntry)
         self['actions'] = ActionMap(['OkCancelActions',
-                                     # 'DirectionActions',
                                      'InputBoxActions',
                                      'HotkeyActions'
-                                     # 'SetupActions'
-                                     # 'EPGSelectActions',
-                                     # 'MenuActions',
                                      'VirtualKeyboardActions',
                                      'NumberActions',
-                                     # 'HelpActions',
                                      'InfoActions',
                                      'ColorActions'], {'left': self.keyLeft,
                                                        'right': self.keyRight,
@@ -200,14 +280,26 @@ class AglareSetup(ConfigListScreen, Screen):
         self.createSetup()
         self.PicLoad = ePicLoad()
         self.Scale = AVSwitch().getFramebufferScale()
-        try:
-            self.PicLoad.PictureData.get().append(self.DecodePicture)
-        except:
-            self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
-        self.onLayoutFinish.append(self.UpdateComponents)
+        # try:
+            # self.PicLoad.PictureData.get().append(self.DecodePicture)
+        # except:
+            # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
+        # self.onLayoutFinish.append(self.UpdateComponents)
+        self.onLayoutFinish.append(self.ShowPicture)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        self.setTitle(self.setup_title)
+
+    def passs(self, foo):
+        pass
 
     def keyRun(self):
         sel = self["config"].getCurrent()[1]
+        if sel and sel == config.plugins.Aglare.png:
+            self.removPng()
+            config.plugins.Aglare.png.setValue(0)
+            config.plugins.Aglare.png.save()
         if sel and sel == config.plugins.Aglare.api:
             self.keyApi()
         if sel and sel == config.plugins.Aglare.txtapi:
@@ -218,10 +310,10 @@ class AglareSetup(ConfigListScreen, Screen):
             self.KeyText()
 
     def keyApi(self, answer=None):
-        api = "/tmp/apikey.txt"
+        api = "/tmp/tmdbkey.txt"
         if answer is None:
             if fileExists(api) and os.stat(api).st_size > 0:
-                self.session.openWithCallback(self.keyApi, MessageBox, _("Import Api Key TMDB from /tmp/apikey.txt?"))
+                self.session.openWithCallback(self.keyApi, MessageBox, _("Import Api Key TMDB from /tmp/tmdbkey.txt?"))
             else:
                 self.session.open(MessageBox, (_("Missing %s !") % api), MessageBox.TYPE_INFO, timeout=4)
         elif answer:
@@ -233,7 +325,6 @@ class AglareSetup(ConfigListScreen, Screen):
                         t.write(fpage)
                     config.plugins.Aglare.txtapi.setValue(fpage)
                     config.plugins.Aglare.txtapi.save()
-                    self.createSetup()
                     self.session.open(MessageBox, _("TMDB ApiKey Imported & Stored!"), MessageBox.TYPE_INFO, timeout=4)
                 else:
                     self.session.open(MessageBox, _("TMDB ApiKey is empty!"), MessageBox.TYPE_INFO, timeout=4)
@@ -257,7 +348,6 @@ class AglareSetup(ConfigListScreen, Screen):
                         t.write(fpage)
                     config.plugins.Aglare.txtapi2.setValue(fpage)
                     config.plugins.Aglare.txtapi2.save()
-                    self.createSetup()
                     self.session.open(MessageBox, _("OMDB ApiKey Imported & Stored!"), MessageBox.TYPE_INFO, timeout=4)
                 else:
                     self.session.open(MessageBox, _("OMDB ApiKey is empty!"), MessageBox.TYPE_INFO, timeout=4)
@@ -297,20 +387,24 @@ class AglareSetup(ConfigListScreen, Screen):
             list.append(getConfigListEntry(_('ChannelSelection Style:'), config.plugins.Aglare.ChannSelector))
             list.append(getConfigListEntry(_('EventView Style:'), config.plugins.Aglare.EventView))
             list.append(getConfigListEntry(_('VolumeBar Style:'), config.plugins.Aglare.VolumeBar))
-            # section = '--------------------------( SKIN WIDGET SETUP )-----------------------'
-            # list.append(getConfigListEntry(section))
+            list.append(getConfigListEntry(_('Support E2iplayer Skins:'), config.plugins.Aglare.E2iplayerskins))
+
             section = '--------------------------( SKIN APIKEY SETUP )-----------------------'
             list.append(getConfigListEntry(section))
             list.append(getConfigListEntry("API KEY SETUP:", config.plugins.Aglare.actapi, _("Settings Apikey Server")))
             if config.plugins.Aglare.actapi.value is True:
                 list.append(getConfigListEntry("TMDB API:", config.plugins.Aglare.data, _("Settings TMDB ApiKey")))
                 if config.plugins.Aglare.data.value is True:
-                    list.append(getConfigListEntry("--Load TMDB Apikey", config.plugins.Aglare.api, _("Load TMDB Apikey from /tmp/apikey.txt")))
+                    list.append(getConfigListEntry("--Load TMDB Apikey", config.plugins.Aglare.api, _("Load TMDB Apikey from /tmp/tmdbkey.txt")))
                     list.append(getConfigListEntry("--Set TMDB Apikey", config.plugins.Aglare.txtapi, _("Signup on TMDB and input free personal ApiKey")))
                 list.append(getConfigListEntry("OMDB API:", config.plugins.Aglare.data2, _("Settings OMDB APIKEY")))
                 if config.plugins.Aglare.data2.value is True:
                     list.append(getConfigListEntry("--Load OMDB Apikey", config.plugins.Aglare.api2, _("Load OMDB Apikey from /tmp/omdbkey.txt")))
                     list.append(getConfigListEntry("--Set OMDB Apikey", config.plugins.Aglare.txtapi2, _("Signup on OMDB and input free personal ApiKey")))
+
+            section = '--------------------------( SKIN UTILITY SETUP )-----------------------'
+            list.append(getConfigListEntry(_('Remove all png (OK)'), config.plugins.Aglare.png, _("This operation remove all png from folder device (Poster-Backdrop)")))
+
             self["config"].list = list
             self["config"].l.setList(list)
         except KeyError:
@@ -340,34 +434,81 @@ class AglareSetup(ConfigListScreen, Screen):
             self.session.open(File_Commander, user_log)
 
     def GetPicturePath(self):
-        try:
-            returnValue = self['config'].getCurrent()[1].value
-            path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue + '.jpg'
-            if fileExists(path):
-                return path
-            else:
-                return '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.jpg'
-        except Exception as e:
-            print('error GetPicturePath:', e)
-            return '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.jpg'
+        returnValue = self['config'].getCurrent()[1].value
+        PicturePath = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.png'
+        if not isinstance(returnValue, str):
+            returnValue = PicturePath  # if fileExists(PicturePath) else ''
+
+        base_path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue
+        png_path = base_path + '.png'
+        jpg_path = base_path + '.jpg'
+
+        if fileExists(png_path):
+            return convert_image(png_path)
+        elif fileExists(jpg_path):
+            return convert_image(jpg_path)
+        else:
+            return convert_image(PicturePath)
+
+    # def GetPicturePath(self):
+        # returnValue = self['config'].getCurrent()[1].value
+        # PicturePath = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.png'
+        # if not isinstance(returnValue, str):
+            # returnValue = PicturePath  # if fileExists(PicturePath) else ''
+
+        # path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue + '.png'
+        # if fileExists(path):
+            # return convert_image(path)
+        # else:
+            # return convert_image(PicturePath)
 
     def UpdatePicture(self):
-        self.PicLoad.PictureData.get().append(self.DecodePicture)
+        # self.PicLoad.PictureData.get().append(self.DecodePicture)
         self.onLayoutFinish.append(self.ShowPicture)
 
     def ShowPicture(self, data=None):
         if self["Preview"].instance:
-            width = 498
-            height = 280
-            self.PicLoad.setPara([width, height, self.Scale[0], self.Scale[1], 0, 1, "ff000000"])
-            if self.PicLoad.startDecode(self.GetPicturePath()):
-                self.PicLoad = ePicLoad()
-                try:
-                    self.PicLoad.PictureData.get().append(self.DecodePicture)
-                except:
-                    self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
+            size = self['Preview'].instance.size()
+            if size.isNull():
+                size.setWidth(498)
+                size.setHeight(280)
+            pixmapx = self.GetPicturePath()
+            if not fileExists(pixmapx):
+                print("Immagine non trovata:", pixmapx)
+                return
+            png = loadPic(pixmapx, size.width(), size.height(), 0, 0, 0, 1)
+            self["Preview"].instance.setPixmap(png)
             return
+            '''
+            # self.PicLoad.setPara([size.width(), size.height(), self.Scale[0], self.Scale[1], 0, 1, '#00000000'])
+            # pixmapx = self.GetPicturePath()
+            # if not fileExists(pixmapx):
+                # print("Immagine non trovata:", pixmapx)
+                # return
+            # if self.PicLoad.startDecode(pixmapx):
+                # print("Decodifica in corso:", pixmapx)
+                # self.PicLoad = ePicLoad()
+                # try:
+                    # self.PicLoad.PictureData.get().append(self.DecodePicture)
+                # except:
+                    # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
+            # else:
+                # print("Errore di decodifica dell'immagine.")
+            # return
+            '''
 
+    # def ShowPicture(self, data=None):
+        # if self["Preview"].instance:
+            # width = 498
+            # height = 280
+            # self.PicLoad.setPara([width, height, self.Scale[0], self.Scale[1], 0, 1, "ff000000"])
+            # if self.PicLoad.startDecode(self.GetPicturePath()):
+                # self.PicLoad = ePicLoad()
+                # try:
+                    # self.PicLoad.PictureData.get().append(self.DecodePicture)
+                # except:
+                    # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
+            # return
     def DecodePicture(self, PicInfo=None):
         ptr = self.PicLoad.getData()
         if ptr is not None:
@@ -382,16 +523,35 @@ class AglareSetup(ConfigListScreen, Screen):
         aboutbox = self.session.open(MessageBox, _('Setup Aglare for Aglare-FHD-Pli v.%s') % version, MessageBox.TYPE_INFO)
         aboutbox.setTitle(_('Info...'))
 
+    def removPng(self):
+        self.session.openWithCallback(self.removPng2,
+                                      MessageBox, _("[RemovePng] This operation remove all png from folder device (Poster-Backdrop)..\nDo you really want to continue?"),
+                                      MessageBox.TYPE_YESNO)
+
+    def removPng2(self, result):
+        if result:
+            print('from remove png......')
+            removePng()
+            print('png are removed')
+            aboutbox = self.session.open(MessageBox, _('All png are removed from folder!'), MessageBox.TYPE_INFO)
+            aboutbox.setTitle(_('Info...'))
+
     def keyLeft(self):
         ConfigListScreen.keyLeft(self)
         self.createSetup()
         self.ShowPicture()
 
         sel = self["config"].getCurrent()[1]
+        if sel and sel == config.plugins.Aglare.png:
+            config.plugins.Aglare.png.setValue(0)
+            config.plugins.Aglare.png.save()
+            self.removPng()
+
         if sel and sel == config.plugins.Aglare.api:
             config.plugins.Aglare.api.setValue(0)
             config.plugins.Aglare.api.save()
             self.keyApi()
+
         if sel and sel == config.plugins.Aglare.api2:
             config.plugins.Aglare.api2.setValue(0)
             config.plugins.Aglare.api2.save()
@@ -401,12 +561,18 @@ class AglareSetup(ConfigListScreen, Screen):
         ConfigListScreen.keyRight(self)
         self.createSetup()
         self.ShowPicture()
-
         sel = self["config"].getCurrent()[1]
+
+        if sel and sel == config.plugins.Aglare.png:
+            config.plugins.Aglare.png.setValue(0)
+            config.plugins.Aglare.png.save()
+            self.removPng()
+
         if sel and sel == config.plugins.Aglare.api:
             config.plugins.Aglare.api.setValue(0)
             config.plugins.Aglare.api.save()
             self.keyApi()
+
         if sel and sel == config.plugins.Aglare.api2:
             config.plugins.Aglare.api2.setValue(0)
             config.plugins.Aglare.api2.save()
@@ -426,37 +592,35 @@ class AglareSetup(ConfigListScreen, Screen):
         self.item = self["config"].getCurrent()
         for x in self.onChangedEntry:
             x()
-        try:
-            if isinstance(self["config"].getCurrent()[1], ConfigYesNo) or isinstance(self["config"].getCurrent()[1], ConfigSelection):
-                self.createSetup()
-        except:
-            pass
+        # try:
+            # if isinstance(self["config"].getCurrent()[1], ConfigOnOff) or isinstance(self["config"].getCurrent()[1], ConfigYesNo) or isinstance(self["config"].getCurrent()[1], ConfigSelection):
+                # self.createSetup()
+        # except Exception as e:
+            # print("Error in changedEntry:", e)
+
+    def getCurrentValue(self):
+        if self["config"].getCurrent() and len(self["config"].getCurrent()) > 0:
+            return str(self["config"].getCurrent()[1].getText())
+        return ""
 
     def getCurrentEntry(self):
         return self["config"].getCurrent() and self["config"].getCurrent()[0] or ""
-
-    def getCurrentValue(self):
-        return self["config"].getCurrent() and str(self["config"].getCurrent()[1].getText()) or ""
 
     def createSummary(self):
         from Screens.Setup import SetupSummary
         return SetupSummary
 
     def keySave(self):
-        if not fileExists(self.skinFile + self.version):
-            for x in self['config'].list:
-                x[1].cancel()
-            self.close()
-            return
-            
+        # if not fileExists(self.skinFile + self.version):
+            # for x in self['config'].list:
+                # x[1].cancel()
+            # self.close()
+            # return
+
         for x in self['config'].list:
             if len(x) > 1:  # Check if x has at least two elements
                 x[1].save()
-        # try:
 
-        # except IndexError:
-            # print("Errore x non ha abbastanza elementi.")
-            
         config.plugins.Aglare.save()
         configfile.save()
 
@@ -482,7 +646,8 @@ class AglareSetup(ConfigListScreen, Screen):
             self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value + '.xml',
             self.previewFiles + 'channellist-' + config.plugins.Aglare.ChannSelector.value + '.xml',
             self.previewFiles + 'eventview-' + config.plugins.Aglare.EventView.value + '.xml',
-            self.previewFiles + 'vol-' + config.plugins.Aglare.VolumeBar.value + '.xml'
+            self.previewFiles + 'vol-' + config.plugins.Aglare.VolumeBar.value + '.xml',
+            self.previewFiles + 'e2iplayer-' + config.plugins.Aglare.E2iplayerskins.value + '.xml'
         ]
 
         base_file = 'base.xml'
@@ -506,7 +671,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/v.txt')
+            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')
@@ -514,8 +679,7 @@ class AglareSetup(ConfigListScreen, Screen):
             with open(destr, 'w') as f:
                 f.write(str(fp))  # .decode("utf-8"))
                 f.seek(0)
-                f.close()
-            if os.path.exists(destr):
+            if fileExists(destr):
                 with open(destr, 'r') as cc:
                     s1 = cc.readline()  # .decode("utf-8")
                     vers = s1.split('#')[0]
@@ -539,10 +703,11 @@ class AglareSetup(ConfigListScreen, Screen):
             print('error: ', str(e))
 
     def update(self, answer):
-        if answer is True:
-            self.session.open(AglareUpdater, self.updateurl)
-        else:
-            return
+        return
+        # if answer is True:
+            # self.session.open(AglareUpdater, self.updateurl)
+        # else:
+            # return
 
     def keyExit(self):
         self.close()
@@ -573,8 +738,8 @@ class AglareUpdater(Screen):
         self.startUpdate()
 
     def startUpdate(self):
-        self['status'].setText(_('Downloading Aglare...'))
-        self.dlfile = '/tmp/aglarepli.ipk'
+        self['status'].setText(_('Downloading AglareNss...'))
+        self.dlfile = '/tmp/aglarenss.tar'
         print('self.dlfile', self.dlfile)
         self.download = downloadWithProgress(self.updateurl, self.dlfile)
         self.download.addProgress(self.downloadProgress)
@@ -582,9 +747,9 @@ class AglareUpdater(Screen):
 
     def downloadFinished(self, string=''):
         self['status'].setText(_('Installing updates!'))
-        os.system('opkg install /tmp/aglarepli.ipk')
+        os.system('tar -xvf /tmp/xxx.tar -C /')
         os.system('sync')
-        os.system('rm -r /tmp/aglarepli.ipk')
+        os.system('rm -r /tmp/xxx.tar')
         os.system('sync')
         restartbox = self.session.openWithCallback(self.restartGUI, MessageBox, _('Aglare update was done!!!\nDo you want to restart the GUI now?'), MessageBox.TYPE_YESNO)
         restartbox.setTitle(_('Restart GUI now?'))
