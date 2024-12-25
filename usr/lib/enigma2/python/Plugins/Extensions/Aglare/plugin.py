@@ -671,7 +671,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.txt')
+            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/a.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')
