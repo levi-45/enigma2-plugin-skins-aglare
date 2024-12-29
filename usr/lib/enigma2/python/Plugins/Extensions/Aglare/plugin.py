@@ -260,7 +260,7 @@ class AglareSetup(ConfigListScreen, Screen):
         ConfigListScreen.__init__(self, list, session=self.session, on_change=self.changedEntry)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'InputBoxActions',
-                                     'HotkeyActions'
+                                     'HotkeyActions',
                                      'VirtualKeyboardActions',
                                      'NumberActions',
                                      'InfoActions',
@@ -280,11 +280,6 @@ class AglareSetup(ConfigListScreen, Screen):
         self.createSetup()
         self.PicLoad = ePicLoad()
         self.Scale = AVSwitch().getFramebufferScale()
-        # try:
-            # self.PicLoad.PictureData.get().append(self.DecodePicture)
-        # except:
-            # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
-        # self.onLayoutFinish.append(self.UpdateComponents)
         self.onLayoutFinish.append(self.ShowPicture)
         self.onLayoutFinish.append(self.__layoutFinished)
 
@@ -422,7 +417,7 @@ class AglareSetup(ConfigListScreen, Screen):
             check = checkskin.check_module_skin()
             try:
                 self.check_module_conn = self.check_module.timeout.connect(check)
-            except:
+            except AttributeError:
                 self.check_module.callback.append(check)
             self.check_module.start(100, True)
             self.openVi()
@@ -450,20 +445,7 @@ class AglareSetup(ConfigListScreen, Screen):
         else:
             return convert_image(PicturePath)
 
-    # def GetPicturePath(self):
-        # returnValue = self['config'].getCurrent()[1].value
-        # PicturePath = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/default.png'
-        # if not isinstance(returnValue, str):
-            # returnValue = PicturePath  # if fileExists(PicturePath) else ''
-
-        # path = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/screens/' + returnValue + '.png'
-        # if fileExists(path):
-            # return convert_image(path)
-        # else:
-            # return convert_image(PicturePath)
-
     def UpdatePicture(self):
-        # self.PicLoad.PictureData.get().append(self.DecodePicture)
         self.onLayoutFinish.append(self.ShowPicture)
 
     def ShowPicture(self, data=None):
@@ -479,36 +461,7 @@ class AglareSetup(ConfigListScreen, Screen):
             png = loadPic(pixmapx, size.width(), size.height(), 0, 0, 0, 1)
             self["Preview"].instance.setPixmap(png)
             return
-            '''
-            # self.PicLoad.setPara([size.width(), size.height(), self.Scale[0], self.Scale[1], 0, 1, '#00000000'])
-            # pixmapx = self.GetPicturePath()
-            # if not fileExists(pixmapx):
-                # print("Immagine non trovata:", pixmapx)
-                # return
-            # if self.PicLoad.startDecode(pixmapx):
-                # print("Decodifica in corso:", pixmapx)
-                # self.PicLoad = ePicLoad()
-                # try:
-                    # self.PicLoad.PictureData.get().append(self.DecodePicture)
-                # except:
-                    # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
-            # else:
-                # print("Errore di decodifica dell'immagine.")
-            # return
-            '''
 
-    # def ShowPicture(self, data=None):
-        # if self["Preview"].instance:
-            # width = 498
-            # height = 280
-            # self.PicLoad.setPara([width, height, self.Scale[0], self.Scale[1], 0, 1, "ff000000"])
-            # if self.PicLoad.startDecode(self.GetPicturePath()):
-                # self.PicLoad = ePicLoad()
-                # try:
-                    # self.PicLoad.PictureData.get().append(self.DecodePicture)
-                # except:
-                    # self.PicLoad_conn = self.PicLoad.PictureData.connect(self.DecodePicture)
-            # return
     def DecodePicture(self, PicInfo=None):
         ptr = self.PicLoad.getData()
         if ptr is not None:
@@ -592,11 +545,6 @@ class AglareSetup(ConfigListScreen, Screen):
         self.item = self["config"].getCurrent()
         for x in self.onChangedEntry:
             x()
-        # try:
-            # if isinstance(self["config"].getCurrent()[1], ConfigOnOff) or isinstance(self["config"].getCurrent()[1], ConfigYesNo) or isinstance(self["config"].getCurrent()[1], ConfigSelection):
-                # self.createSetup()
-        # except Exception as e:
-            # print("Error in changedEntry:", e)
 
     def getCurrentValue(self):
         if self["config"].getCurrent() and len(self["config"].getCurrent()) > 0:
@@ -671,7 +619,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/a.txt')
+            req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')
