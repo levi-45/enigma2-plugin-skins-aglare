@@ -84,7 +84,8 @@
   <screen name="titletemp" flags="wfNoBorder">
     <widget source="Title" render="Label" position="76,40" size="863,52" font="Regular; 32" noWrap="1" transparent="1" valign="center" zPosition="1" halign="left" />
     <widget source="ScreenPath" render="Label" position="36,10" size="1380,22" backgroundColor="background" transparent="1" zPosition="1" font="Regular; 19" valign="center" halign="left" />
-    <eLabel name="" position="36,44" size="40,40" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" />
+    <!-- <eLabel name="" position="36,44" size="40,40" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" /> -->
+    <ePixmap name="" position="31,44" size="40,40" pixmap="sf/top_logo.png" alphatest="blend" transparent="1" zPosition="99" />
   </screen>
   <!--/* NEW-Automatic-BUTTONS1 /> -->
   <screen name="ScreenTemplateButtonRed_menu">
