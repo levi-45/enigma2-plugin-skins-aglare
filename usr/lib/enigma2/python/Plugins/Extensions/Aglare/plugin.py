@@ -45,7 +45,7 @@ else:
     from urllib2 import Request
 
 
-version = '1.0'
+version = '4.7'
 my_cur_skin = False
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 OAWeather = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('OAWeather'))
@@ -619,7 +619,7 @@ class AglareSetup(ConfigListScreen, Screen):
         try:
             fp = ''
             destr = '/tmp/aglarepliversion.txt'
-            req = Request('https://raw.githubusercontent.com/levi-45/enigma2-plugin-skins-aglare/main/aglarepliversion.txt')
+            req = Request('https://raw.githubusercontent.com/levi-45/enigma2-plugin-skins-aglare/refs/heads/main/aglarepliversion.txt')
             req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
             fp = urlopen(req)
             fp = fp.read().decode('utf-8')
@@ -651,11 +651,10 @@ class AglareSetup(ConfigListScreen, Screen):
             print('error: ', str(e))
 
     def update(self, answer):
-        return
-        # if answer is True:
-            # self.session.open(AglareUpdater, self.updateurl)
-        # else:
-            # return
+        if answer is True:
+            self.session.open(AglareUpdater, self.updateurl)
+        else:
+            return
 
     def keyExit(self):
         self.close()
