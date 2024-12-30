@@ -685,8 +685,8 @@ class AglareUpdater(Screen):
         self.startUpdate()
 
     def startUpdate(self):
-        self['status'].setText(_('Downloading AglareNss...'))
-        self.dlfile = '/tmp/aglarenss.tar'
+        self['status'].setText(_('Downloading Aglare...'))
+        self.dlfile = '/tmp/aglare.tar'
         print('self.dlfile', self.dlfile)
         self.download = downloadWithProgress(self.updateurl, self.dlfile)
         self.download.addProgress(self.downloadProgress)
