@@ -45,7 +45,7 @@ else:
     from urllib2 import Request
 
 
-version = '4.8'
+version = '5.0'
 my_cur_skin = False
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 OAWeather = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('OAWeather'))
