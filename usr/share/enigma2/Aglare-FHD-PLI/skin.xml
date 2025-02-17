@@ -1,4 +1,4 @@
-<skin>
+﻿<skin>
     <!-- *************************************************** -->
     <!-- Aglare-FHD-PLI skin                                 -->
     <!-- by MNASR                                            -->
@@ -16,7 +16,7 @@
             author="MNASR"
             license="Open"
             Support="OpenPLI"
-            Version="4.6"
+            Version="5.2"
             Release date="14/11/2024"
 
             supporturl="www.satellite-forum.com"
