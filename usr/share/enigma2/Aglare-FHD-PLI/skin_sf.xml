@@ -66,7 +66,6 @@
         <panel name="ScreenTemplateAllColorButtons_menu"/>
         <panel name="pigscreen885"/>
         <ePixmap name="" position="1638,719" size="220,136" pixmap="sf/logo.png" alphatest="blend" zPosition="1" transparent="1" />
-        <!-- <panel name="bLogo" /> -->
         <widget name="config" position="43,161" size="869,678" font="Regular;34" itemHeight="50" scrollbarWidth="10" scrollbarMode="showOnDemand" backgroundColor="#000000" transparent="1"/>
         <widget name="info" position="997,608" size="884,81" font="Regular; 32" halign="left" valign="center" foregroundColor="yellow" backgroundColor="#202020" transparent="0" zPosition="5"/>
         <widget name="description" position="41,95" size="882,59" font="Regular;30" halign="center" valign="center" foregroundColor="yellow" backgroundColor="#202020" transparent="0" zPosition="5"/>
